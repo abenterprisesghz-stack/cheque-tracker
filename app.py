@@ -73,4 +73,4 @@ if selected_display != "Select Party...":
     final_table = filtered_df.drop(columns=['Search_Display'])
     st.dataframe(final_table, use_container_width=True, hide_index=True)
 else:
-    st.info("Kripya search box mein Party ka naam select karein.")
+    st.info("Please select the party name in the search box.")
