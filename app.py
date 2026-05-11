@@ -67,7 +67,7 @@ if selected_display != "Select Party...":
     m1, m2, m3 = st.columns(3)
     m1.metric("Total Cheques", total_count)
     m2.metric("Used Cheques", used_count)
-    m3.metric("Unused (Pending)", unused_count)
+    m3.metric("Unused (Available)", unused_count)
     
     st.markdown("---")
     final_table = filtered_df.drop(columns=['Search_Display'])
