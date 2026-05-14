@@ -64,6 +64,22 @@ st.markdown("""
         border: 1px solid #e2e8f0;
     }
 
+    /* --- Alert Box Animation & Styling --- */
+    @keyframes pulse-border {
+        0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+    }
+    .critical-alert {
+        background-color: #fff1f2; 
+        border-left: 6px solid #e11d48; 
+        padding: 18px 20px; 
+        border-radius: 8px; 
+        margin-top: 10px; 
+        margin-bottom: 25px;
+        animation: pulse-border 2s infinite;
+    }
+
     /* Dark Mode Compatibility */
     @media (prefers-color-scheme: dark) {
         .stApp { background-color: #0f172a; }
@@ -81,6 +97,10 @@ st.markdown("""
         }
         div[data-testid="stDataFrame"] {
             border: 1px solid #334155;
+        }
+        .critical-alert {
+            background-color: #4c0519;
+            border-left: 6px solid #fb7185;
         }
     }
     
@@ -148,6 +168,21 @@ if selected_display != "Select Party...":
     used_count = len(filtered_df[filtered_df['Status'].str.upper() == 'USE'])
     total_count = len(filtered_df)
     unused_count = total_count - used_count
+    
+    # --- 🚨 CRITICAL ALERT SYSTEM 🚨 ---
+    # Trigger alert if unused cheques are 2 or less
+    if unused_count <= 2:
+        st.markdown(f"""
+            <div class="critical-alert">
+                <h4 style="color: #be123c; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
+                    ⚠️ ACTION REQUIRED: Low Cheque Inventory
+                </h4>
+                <p style="color: #9f1239; margin: 8px 0 0 0; font-size: 16px; font-weight: 500;">
+                    <b>{selected_display}</b> has only <b style="font-size:18px;">{unused_count}</b> unused cheque(s) left. <br>
+                    Please send new cheques to avoid any interruption in the billing process.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
     
     # Header and Download Button aligned
     col_summary, col_download = st.columns([4, 1])
