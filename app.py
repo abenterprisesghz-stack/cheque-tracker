@@ -4,20 +4,15 @@ import pandas as pd
 # --- Page Setup ---
 st.set_page_config(page_title="AB Enterprises | Cheque Tracker", page_icon="🏢", layout="wide")
 
-# --- Custom CSS for Corporate Slate Minimalistic Theme ---
+# --- Custom CSS for Corporate Slate Theme (Fully Auto-Responsive to Light/Dark Mode) ---
 st.markdown("""
     <style>
-    /* App Background - Clean Light Slate */
-    .stApp {
-        background-color: #f8fafc;
-    }
-    
-    /* Modern Company Header - Solid & Professional (No Gradients) */
+    /* Modern Company Header - Always keeps deep slate look */
     .company-header {
-        background-color: #1e293b; /* Deep Slate */
+        background-color: #1e293b; 
         padding: 24px 32px;
         border-radius: 8px;
-        border-left: 6px solid #64748b; /* Sober Slate Accent */
+        border-left: 6px solid #64748b; 
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         margin-bottom: 2rem;
     }
@@ -36,24 +31,23 @@ st.markdown("""
         font-weight: 400;
     }
 
-    /* Metric Cards Styling - Minimal & Clean */
+    /* Metric Cards Styling - Adapts to Streamlit's native Light/Dark theme automatically */
     div[data-testid="metric-container"] {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
+        background-color: var(--secondary-background-color);
+        border: 1px solid var(--faded-text-10);
         border-radius: 8px;
         padding: 16px 20px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        border-left: 4px solid #475569; /* Slate side-border */
+        border-left: 4px solid #64748b; 
         transition: all 0.2s ease;
     }
     div[data-testid="metric-container"]:hover {
-        border-left: 4px solid #0f172a;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #e11d48; /* Red accent on hover for clarity */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
-    /* Metric Values */
+    /* Metric Values - Always picks the right text color based on theme */
     div[data-testid="stMetricValue"] {
-        color: #0f172a !important;
+        color: var(--text-color) !important;
         font-weight: 700 !important;
     }
 
@@ -61,17 +55,17 @@ st.markdown("""
     div[data-testid="stDataFrame"] {
         border-radius: 6px;
         overflow: hidden;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--faded-text-10);
     }
 
-    /* --- Alert Box Animation & Styling --- */
+    /* --- Alert Box Animation & Styling (Works smoothly in both modes) --- */
     @keyframes pulse-border {
         0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
         70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
         100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
     }
     .critical-alert {
-        background-color: #fff1f2; 
+        background-color: rgba(225, 29, 72, 0.1); /* Transparent red shade */
         border-left: 6px solid #e11d48; 
         padding: 18px 20px; 
         border-radius: 8px; 
@@ -80,34 +74,14 @@ st.markdown("""
         animation: pulse-border 2s infinite;
     }
 
-    /* Dark Mode Compatibility */
-    @media (prefers-color-scheme: dark) {
-        .stApp { background-color: #0f172a; }
-        .company-header {
-            background-color: #0b1120;
-            border-left: 6px solid #475569;
-        }
-        div[data-testid="metric-container"] {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            border-left: 4px solid #64748b;
-        }
-        div[data-testid="stMetricValue"] {
-            color: #f8fafc !important;
-        }
-        div[data-testid="stDataFrame"] {
-            border: 1px solid #334155;
-        }
-        .critical-alert {
-            background-color: #4c0519;
-            border-left: 6px solid #fb7185;
-        }
-    }
-    
-    /* Streamlit specific UI tweaks for cleaner look */
+    /* Streamlit specific UI tweaks */
     .stSelectbox label {
         font-weight: 600 !important;
-        color: #334155;
+        color: var(--text-color) !important;
+    }
+    
+    h3, h4 {
+        color: var(--text-color) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -151,7 +125,6 @@ except FileNotFoundError:
 # --- Search Section ---
 st.markdown("### 🔍 Search & Filter")
 
-# Removed the Refresh button and its column since it's redundant
 display_list = sorted(list(df['Search_Display'].dropna().unique()))
 selected_display = st.selectbox(
     "Search Party Name:", 
@@ -170,16 +143,15 @@ if selected_display != "Select Party...":
     unused_count = total_count - used_count
     
     # --- 🚨 CRITICAL ALERT SYSTEM 🚨 ---
-    # Trigger alert if unused cheques are 2 or less
     if unused_count <= 2:
         st.markdown(f"""
             <div class="critical-alert">
-                <h4 style="color: #be123c; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
+                <h4 style="color: #e11d48; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
                     ⚠️ ACTION REQUIRED: Low Cheque Inventory
                 </h4>
-                <p style="color: #9f1239; margin: 8px 0 0 0; font-size: 16px; font-weight: 500;">
-                    <b>{selected_display}</b> has only <b style="font-size:18px;">{unused_count}</b> unused cheque(s) left. <br>
-                    Please send new cheques to avoid any interruption in the billing process.
+                <p style="color: var(--text-color); margin: 8px 0 0 0; font-size: 16px; font-weight: 500;">
+                    <b>{selected_display}</b> has only <b style="font-size:18px; color: #e11d48;">{unused_count}</b> unused cheque(s) left. <br>
+                    Please send new cheques immediately to avoid any interruption in the billing process.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -188,10 +160,9 @@ if selected_display != "Select Party...":
     col_summary, col_download = st.columns([4, 1])
     
     with col_summary:
-        st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#475569;'>{selected_display}</span>**", unsafe_allow_html=True)
+        st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#64748b;'>{selected_display}</span>**", unsafe_allow_html=True)
     
     with col_download:
-        # Convert filtered data to CSV for the download button
         final_table = filtered_df.drop(columns=['Search_Display'])
         csv_data = final_table.to_csv(index=False).encode('utf-8')
         
