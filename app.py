@@ -7,7 +7,6 @@ st.set_page_config(page_title="AB Enterprises | Cheque Tracker", page_icon="🏢
 # --- Custom CSS for Corporate Slate Theme (Fully Auto-Responsive to Light/Dark Mode) ---
 st.markdown("""
     <style>
-    /* Modern Company Header - Always keeps deep slate look */
     .company-header {
         background-color: #1e293b; 
         padding: 24px 32px;
@@ -30,8 +29,6 @@ st.markdown("""
         font-size: 14px;
         font-weight: 400;
     }
-
-    /* Metric Cards Styling - Adapts to Streamlit's native Light/Dark theme automatically */
     div[data-testid="metric-container"] {
         background-color: var(--secondary-background-color);
         border: 1px solid var(--faded-text-10);
@@ -41,24 +38,18 @@ st.markdown("""
         transition: all 0.2s ease;
     }
     div[data-testid="metric-container"]:hover {
-        border-left: 4px solid #e11d48; /* Red accent on hover for clarity */
+        border-left: 4px solid #e11d48; 
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    
-    /* Metric Values - Always picks the right text color based on theme */
     div[data-testid="stMetricValue"] {
         color: var(--text-color) !important;
         font-weight: 700 !important;
     }
-
-    /* Dataframe Container styling */
     div[data-testid="stDataFrame"] {
         border-radius: 6px;
         overflow: hidden;
         border: 1px solid var(--faded-text-10);
     }
-
-    /* --- Alert Box Animation & Styling (Works smoothly in both modes) --- */
     @keyframes pulse-border {
         0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
         70% { box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
@@ -82,13 +73,10 @@ st.markdown("""
         margin-bottom: 25px;
         animation: pulse-border 1.5s infinite;
     }
-
-    /* Streamlit specific UI tweaks */
     .stSelectbox label, .stTextInput label, .stRadio label {
         font-weight: 600 !important;
         color: var(--text-color) !important;
     }
-    
     h3, h4 {
         color: var(--text-color) !important;
     }
@@ -105,14 +93,17 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- Core Logic ---
-@st.cache_data(ttl=60) 
+# --- FAST Core Logic ---
+# Cache TTL increased to 5 mins (300s) for better performance
+@st.cache_data(ttl=300) 
 def load_data():
     df = pd.read_excel("data.xlsx")
     df.columns = df.columns.str.strip()
     
     if 'Status' in df.columns:
-        df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
+        # Pre-format to uppercase once, saves processing power during filtering
+        df['Status'] = df['Status'].fillna('UNUSED').astype(str).str.strip().str.upper()
+        df['Status'] = df['Status'].replace('', 'UNUSED')
     else:
         st.error("❌ Excel mein 'Status' column nahi mila!")
         st.stop()
@@ -122,6 +113,10 @@ def load_data():
         df['Search_Display'] = df['Party Name'].astype(str) + " (" + df['CITY'].astype(str) + ")"
     else:
         df['Search_Display'] = df['Party Name'].astype(str)
+    
+    # 🔥 SUPER FAST SEARCH OPTIMIZATION 🔥
+    # Pre-combining all row data into a single lowercase string column for instant text searching
+    df['_Search_Index'] = df.astype(str).agg(' '.join, axis=1).str.lower()
         
     return df
 
@@ -145,9 +140,11 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # --- Display Logic ---
 if selected_display != "Select Party...":
+    # Filter for selected party
     filtered_df = df[df['Search_Display'] == selected_display]
     
-    used_count = len(filtered_df[filtered_df['Status'].str.upper() == 'USE'])
+    # Status calculation is now faster because 'Status' is already uppercase
+    used_count = len(filtered_df[filtered_df['Status'] == 'USE'])
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
@@ -177,6 +174,9 @@ if selected_display != "Select Party...":
             </div>
         """, unsafe_allow_html=True)
     
+    # Drop backend processing columns for UI
+    final_table = filtered_df.drop(columns=['Search_Display'])
+    
     # Header and Download Button aligned
     col_summary, col_download = st.columns([4, 1])
     
@@ -184,9 +184,7 @@ if selected_display != "Select Party...":
         st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#64748b;'>{selected_display}</span>**", unsafe_allow_html=True)
     
     with col_download:
-        final_table = filtered_df.drop(columns=['Search_Display'])
-        csv_data = final_table.to_csv(index=False).encode('utf-8')
-        
+        csv_data = final_table.drop(columns=['_Search_Index']).to_csv(index=False).encode('utf-8')
         st.download_button(
             label="⬇️ Download Data",
             data=csv_data,
@@ -204,13 +202,12 @@ if selected_display != "Select Party...":
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # --- ADVANCED FILTER SECTION ---
+    # --- FAST ADVANCED FILTER SECTION ---
     st.markdown("#### 📝 Cheque Details & Filters")
     
     f_col1, f_col2 = st.columns([2, 2])
     
     with f_col1:
-        # Status Filter Radio Buttons
         status_filter = st.radio(
             "Filter by Status:",
             ["All", "Unused 💳", "Used ✅"],
@@ -218,29 +215,26 @@ if selected_display != "Select Party...":
         )
         
     with f_col2:
-        # Global text search for the specific dataframe
         search_term = st.text_input("🔍 Search (Cheque No, Bank, Amount, etc.):", placeholder="Type to filter...")
 
-    # Apply the filters to the dataframe
-    display_df = final_table.copy()
+    # Apply filters dynamically 
+    display_df = final_table
 
-    # 1. Apply Status Filter
+    # 1. Fast Status Filter (Direct equality check)
     if status_filter == "Unused 💳":
-        display_df = display_df[display_df['Status'].str.upper() == 'UNUSED']
+        display_df = display_df[display_df['Status'] == 'UNUSED']
     elif status_filter == "Used ✅":
-        display_df = display_df[display_df['Status'].str.upper() == 'USE']
+        display_df = display_df[display_df['Status'] == 'USE']
 
-    # 2. Apply Text Search Filter (Dynamic across all columns)
+    # 2. Fast Text Search Filter (Searching single pre-computed index)
     if search_term:
-        # Check if the search term exists in any column (case insensitive)
-        mask = display_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)
-        display_df = display_df[mask]
+        display_df = display_df[display_df['_Search_Index'].str.contains(search_term.lower(), na=False)]
 
-    # Show result count indicator
-    st.caption(f"Showing {len(display_df)} of {len(final_table)} records for this party.")
+    # Remove the hidden search index column before showing in the UI
+    ui_display_table = display_df.drop(columns=['_Search_Index'])
 
-    # Data Table Rendering
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    st.caption(f"Showing {len(ui_display_table)} of {len(final_table)} records for this party.")
+    st.dataframe(ui_display_table, use_container_width=True, hide_index=True)
     
 else:
     st.info("ℹ️ Please select the party name in the search box.")
