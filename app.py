@@ -84,7 +84,7 @@ st.markdown("""
     }
 
     /* Streamlit specific UI tweaks */
-    .stSelectbox label {
+    .stSelectbox label, .stTextInput label, .stRadio label {
         font-weight: 600 !important;
         color: var(--text-color) !important;
     }
@@ -153,7 +153,6 @@ if selected_display != "Select Party...":
     
     # --- 🚨 CRITICAL ALERT SYSTEM 🚨 ---
     if unused_count == 0:
-        # Message specifically for 0 Cheques
         st.markdown(f"""
             <div class="zero-alert">
                 <h4 style="color: #b91c1c; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
@@ -166,7 +165,6 @@ if selected_display != "Select Party...":
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
-        # Message for Low Inventory (1 or 2 Cheques)
         st.markdown(f"""
             <div class="critical-alert">
                 <h4 style="color: #e11d48; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
@@ -206,9 +204,43 @@ if selected_display != "Select Party...":
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Data Table
-    st.markdown("#### 📝 Cheque Details")
-    st.dataframe(final_table, use_container_width=True, hide_index=True)
+    # --- ADVANCED FILTER SECTION ---
+    st.markdown("#### 📝 Cheque Details & Filters")
+    
+    f_col1, f_col2 = st.columns([2, 2])
+    
+    with f_col1:
+        # Status Filter Radio Buttons
+        status_filter = st.radio(
+            "Filter by Status:",
+            ["All", "Unused 💳", "Used ✅"],
+            horizontal=True
+        )
+        
+    with f_col2:
+        # Global text search for the specific dataframe
+        search_term = st.text_input("🔍 Search (Cheque No, Bank, Amount, etc.):", placeholder="Type to filter...")
+
+    # Apply the filters to the dataframe
+    display_df = final_table.copy()
+
+    # 1. Apply Status Filter
+    if status_filter == "Unused 💳":
+        display_df = display_df[display_df['Status'].str.upper() == 'UNUSED']
+    elif status_filter == "Used ✅":
+        display_df = display_df[display_df['Status'].str.upper() == 'USE']
+
+    # 2. Apply Text Search Filter (Dynamic across all columns)
+    if search_term:
+        # Check if the search term exists in any column (case insensitive)
+        mask = display_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)
+        display_df = display_df[mask]
+
+    # Show result count indicator
+    st.caption(f"Showing {len(display_df)} of {len(final_table)} records for this party.")
+
+    # Data Table Rendering
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
     
 else:
     st.info("ℹ️ Please select the party name in the search box.")
