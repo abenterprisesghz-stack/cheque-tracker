@@ -4,96 +4,86 @@ import pandas as pd
 # --- Page Setup ---
 st.set_page_config(page_title="AB Enterprises | Cheque Tracker", page_icon="🏢", layout="wide")
 
-# --- Custom CSS for Corporate Slate Minimalistic Theme ---
+# --- Custom CSS for Better Graphics & Colors (Python logic is untouched) ---
 st.markdown("""
     <style>
-    /* App Background - Clean Light Slate */
+    /* App Background */
     .stApp {
-        background-color: #f8fafc;
+        background-color: #f4f6f9;
     }
     
-    /* Modern Company Header - Solid & Professional */
+    /* Modern Company Header - High Contrast */
     .company-header {
-        background-color: #1e293b;
-        padding: 24px 32px;
-        border-radius: 8px;
-        border-left: 6px solid #64748b;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(to right, #141e30, #243b55); /* Deep elegant slate gradient */
+        padding: 25px 30px;
+        border-radius: 10px;
+        border-left: 8px solid #00d2ff; /* Bright Cyan Accent */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         margin-bottom: 2rem;
     }
     .company-title {
-        color: #f8fafc !important; 
+        color: #ffffff !important; /* Forces text to be white */
         margin: 0;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        font-size: 34px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
     .company-sub {
-        color: #94a3b8 !important; 
-        margin: 6px 0 0 0;
-        font-size: 14px;
-        font-weight: 400;
+        color: #a8dadc !important; /* Soft light cyan for address */
+        margin: 8px 0 0 0;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
     }
 
     /* Metric Cards Styling */
     div[data-testid="metric-container"] {
         background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 16px 20px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        border-left: 4px solid #475569;
-        transition: all 0.2s ease;
+        border: 1px solid #e0e6ed;
+        border-radius: 10px;
+        padding: 15px 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border-top: 4px solid #243b55;
+        transition: transform 0.2s ease-in-out;
     }
     div[data-testid="metric-container"]:hover {
-        border-left: 4px solid #0f172a;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
     }
     
-    /* Metric Values */
+    /* Make Metric Values Stand Out */
     div[data-testid="stMetricValue"] {
-        color: #0f172a !important;
-        font-weight: 700 !important;
+        color: #141e30 !important;
+        font-weight: 800 !important;
     }
 
     /* Dataframe Container styling */
     div[data-testid="stDataFrame"] {
-        border-radius: 6px;
+        border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #e2e8f0;
-    }
-
-    /* Radio Buttons (Alphabet Filter) Styling */
-    div.row-widget.stRadio > div {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e0e6ed;
     }
 
     /* Dark Mode Compatibility */
     @media (prefers-color-scheme: dark) {
-        .stApp { background-color: #0f172a; }
+        .stApp { background-color: #0e1117; }
         .company-header {
-            background-color: #0b1120;
-            border-left: 6px solid #475569;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
         }
         div[data-testid="metric-container"] {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            border-left: 4px solid #64748b;
+            background-color: #1a1c23;
+            border: 1px solid #2d3748;
+            border-top: 4px solid #00d2ff;
         }
         div[data-testid="stMetricValue"] {
-            color: #f8fafc !important;
+            color: #ffffff !important;
         }
         div[data-testid="stDataFrame"] {
-            border: 1px solid #334155;
+            border: 1px solid #2d3748;
         }
-    }
-    
-    .stSelectbox label {
-        font-weight: 600 !important;
-        color: #334155;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -134,80 +124,34 @@ except FileNotFoundError:
     st.error("⚠️ Data file not found. Kripya 'data.xlsx' check karein.")
     st.stop()
 
+# --- Search Section ---
+st.markdown("### 🔍 Search & Filter")
+col_search, col_btn = st.columns([4, 1], gap="medium")
 
-# --- 1. ALPHABET FILTER SECTION ---
-st.markdown("### 🔠 Filter by Alphabet")
+with col_search:
+    display_list = sorted(list(df['Search_Display'].dropna().unique()))
+    selected_display = st.selectbox(
+        "Search Party Name:", 
+        ["Select Party..."] + display_list,
+        label_visibility="collapsed"
+    )
 
-# Get unique starting letters from the data (A, B, C...)
-letters_in_data = sorted([char for char in df['Search_Display'].str[0].str.upper().unique() if char.isalpha()])
-available_letters = ["ALL"] + letters_in_data
-
-# Radio buttons for A-Z
-selected_letter = st.radio("Select Starting Letter", available_letters, horizontal=True, label_visibility="collapsed")
-
-# Filter DataFrame based on selected letter
-if selected_letter != "ALL":
-    filtered_by_letter = df[df['Search_Display'].str.upper().str.startswith(selected_letter)]
-else:
-    filtered_by_letter = df
-
-st.markdown("---")
-
-# --- 2. SEARCH SECTION ---
-st.markdown("### 🔍 Search Specific Party")
-
-# Dropdown list dynamically updates based on the Alphabet selected above
-display_list = sorted(list(filtered_by_letter['Search_Display'].dropna().unique()))
-selected_display = st.selectbox(
-    "Search Party Name:", 
-    ["Select Party..."] + display_list,
-    label_visibility="collapsed"
-)
+with col_btn:
+    if st.button("🔄 Refresh Data", use_container_width=True, type="primary"):
+        st.cache_data.clear() 
+        st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True) 
 
-
-# --- 3. DISPLAY & DOWNLOAD LOGIC ---
-# Determine which data to show (Specific Party OR Entire Alphabet group)
-data_to_show = None
-display_title = ""
-file_name_prefix = ""
-
+# --- Display Logic ---
 if selected_display != "Select Party...":
-    # User selected a specific party from dropdown
-    data_to_show = filtered_by_letter[filtered_by_letter['Search_Display'] == selected_display]
-    display_title = selected_display
-    file_name_prefix = selected_display
-elif selected_letter != "ALL":
-    # User selected an Alphabet, but hasn't picked a specific party yet
-    data_to_show = filtered_by_letter
-    display_title = f"All Parties starting with '{selected_letter}'"
-    file_name_prefix = f"Parties_List_{selected_letter}"
-
-# Render the Dashboard if there is data to show
-if data_to_show is not None:
-    used_count = len(data_to_show[data_to_show['Status'].str.upper() == 'USE'])
-    total_count = len(data_to_show)
+    filtered_df = df[df['Search_Display'] == selected_display]
+    
+    used_count = len(filtered_df[filtered_df['Status'].str.upper() == 'USE'])
+    total_count = len(filtered_df)
     unused_count = total_count - used_count
     
-    col_summary, col_download = st.columns([4, 1])
-    
-    with col_summary:
-        st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#475569;'>{display_title}</span>**", unsafe_allow_html=True)
-    
-    with col_download:
-        # Prepare CSV for Download
-        final_table = data_to_show.drop(columns=['Search_Display'])
-        csv_data = final_table.to_csv(index=False).encode('utf-8')
-        
-        st.download_button(
-            label="⬇️ Download Data",
-            data=csv_data,
-            file_name=f"{file_name_prefix}_cheques.csv",
-            mime="text/csv",
-            use_container_width=True,
-            type="primary"
-        )
+    st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#00d2ff;'>{selected_display}</span>**", unsafe_allow_html=True)
     
     # Dashboard Metrics
     m1, m2, m3 = st.columns(3)
@@ -219,8 +163,8 @@ if data_to_show is not None:
     
     # Data Table
     st.markdown("#### 📝 Cheque Details")
+    final_table = filtered_df.drop(columns=['Search_Display'])
     st.dataframe(final_table, use_container_width=True, hide_index=True)
     
 else:
-    # Default info state
     st.info("ℹ️ Please select the party name in the search box.")
