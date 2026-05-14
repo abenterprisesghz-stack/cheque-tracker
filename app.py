@@ -65,13 +65,22 @@ st.markdown("""
         100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
     }
     .critical-alert {
-        background-color: rgba(225, 29, 72, 0.1); /* Transparent red shade */
+        background-color: rgba(225, 29, 72, 0.1); 
         border-left: 6px solid #e11d48; 
         padding: 18px 20px; 
         border-radius: 8px; 
         margin-top: 10px; 
         margin-bottom: 25px;
         animation: pulse-border 2s infinite;
+    }
+    .zero-alert {
+        background-color: rgba(185, 28, 28, 0.15); 
+        border-left: 6px solid #b91c1c; 
+        padding: 18px 20px; 
+        border-radius: 8px; 
+        margin-top: 10px; 
+        margin-bottom: 25px;
+        animation: pulse-border 1.5s infinite;
     }
 
     /* Streamlit specific UI tweaks */
@@ -143,7 +152,21 @@ if selected_display != "Select Party...":
     unused_count = total_count - used_count
     
     # --- 🚨 CRITICAL ALERT SYSTEM 🚨 ---
-    if unused_count <= 2:
+    if unused_count == 0:
+        # Message specifically for 0 Cheques
+        st.markdown(f"""
+            <div class="zero-alert">
+                <h4 style="color: #b91c1c; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
+                    🛑 CRITICAL: Out of Cheques
+                </h4>
+                <p style="color: var(--text-color); margin: 8px 0 0 0; font-size: 16px; font-weight: 500;">
+                    <b>{selected_display}</b> currently has <b style="font-size:18px; color: #b91c1c;">ZERO</b> available cheques.<br>
+                    <b>Billing operations cannot proceed.</b> Please arrange new cheques for this party immediately!
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+    elif unused_count <= 2:
+        # Message for Low Inventory (1 or 2 Cheques)
         st.markdown(f"""
             <div class="critical-alert">
                 <h4 style="color: #e11d48; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 700;">
