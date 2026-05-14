@@ -4,86 +4,90 @@ import pandas as pd
 # --- Page Setup ---
 st.set_page_config(page_title="AB Enterprises | Cheque Tracker", page_icon="🏢", layout="wide")
 
-# --- Custom CSS for Better Graphics & Colors (Python logic is untouched) ---
+# --- Custom CSS for Corporate Slate Minimalistic Theme ---
 st.markdown("""
     <style>
-    /* App Background */
+    /* App Background - Clean Light Slate */
     .stApp {
-        background-color: #f4f6f9;
+        background-color: #f8fafc;
     }
     
-    /* Modern Company Header - High Contrast */
+    /* Modern Company Header - Solid & Professional (No Gradients) */
     .company-header {
-        background: linear-gradient(to right, #141e30, #243b55); /* Deep elegant slate gradient */
-        padding: 25px 30px;
-        border-radius: 10px;
-        border-left: 8px solid #00d2ff; /* Bright Cyan Accent */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        background-color: #1e293b; /* Deep Slate */
+        padding: 24px 32px;
+        border-radius: 8px;
+        border-left: 6px solid #64748b; /* Sober Slate Accent */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         margin-bottom: 2rem;
     }
     .company-title {
-        color: #ffffff !important; /* Forces text to be white */
+        color: #f8fafc !important; 
         margin: 0;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-weight: 800;
-        letter-spacing: 1px;
-        font-size: 34px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        font-size: 30px;
     }
     .company-sub {
-        color: #a8dadc !important; /* Soft light cyan for address */
-        margin: 8px 0 0 0;
-        font-size: 15px;
-        font-weight: 500;
-        letter-spacing: 0.5px;
+        color: #94a3b8 !important; 
+        margin: 6px 0 0 0;
+        font-size: 14px;
+        font-weight: 400;
     }
 
-    /* Metric Cards Styling */
+    /* Metric Cards Styling - Minimal & Clean */
     div[data-testid="metric-container"] {
         background-color: #ffffff;
-        border: 1px solid #e0e6ed;
-        border-radius: 10px;
-        padding: 15px 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        border-top: 4px solid #243b55;
-        transition: transform 0.2s ease-in-out;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 16px 20px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #475569; /* Slate side-border */
+        transition: all 0.2s ease;
     }
     div[data-testid="metric-container"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #0f172a;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
     
-    /* Make Metric Values Stand Out */
+    /* Metric Values */
     div[data-testid="stMetricValue"] {
-        color: #141e30 !important;
-        font-weight: 800 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
     }
 
     /* Dataframe Container styling */
     div[data-testid="stDataFrame"] {
-        border-radius: 8px;
+        border-radius: 6px;
         overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e0e6ed;
+        border: 1px solid #e2e8f0;
     }
 
     /* Dark Mode Compatibility */
     @media (prefers-color-scheme: dark) {
-        .stApp { background-color: #0e1117; }
+        .stApp { background-color: #0f172a; }
         .company-header {
-            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            background-color: #0b1120;
+            border-left: 6px solid #475569;
         }
         div[data-testid="metric-container"] {
-            background-color: #1a1c23;
-            border: 1px solid #2d3748;
-            border-top: 4px solid #00d2ff;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-left: 4px solid #64748b;
         }
         div[data-testid="stMetricValue"] {
-            color: #ffffff !important;
+            color: #f8fafc !important;
         }
         div[data-testid="stDataFrame"] {
-            border: 1px solid #2d3748;
+            border: 1px solid #334155;
         }
+    }
+    
+    /* Streamlit specific UI tweaks for cleaner look */
+    .stSelectbox label {
+        font-weight: 600 !important;
+        color: #334155;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -126,20 +130,14 @@ except FileNotFoundError:
 
 # --- Search Section ---
 st.markdown("### 🔍 Search & Filter")
-col_search, col_btn = st.columns([4, 1], gap="medium")
 
-with col_search:
-    display_list = sorted(list(df['Search_Display'].dropna().unique()))
-    selected_display = st.selectbox(
-        "Search Party Name:", 
-        ["Select Party..."] + display_list,
-        label_visibility="collapsed"
-    )
-
-with col_btn:
-    if st.button("🔄 Refresh Data", use_container_width=True, type="primary"):
-        st.cache_data.clear() 
-        st.rerun()
+# Removed the Refresh button and its column since it's redundant
+display_list = sorted(list(df['Search_Display'].dropna().unique()))
+selected_display = st.selectbox(
+    "Search Party Name:", 
+    ["Select Party..."] + display_list,
+    label_visibility="collapsed"
+)
 
 st.markdown("<br>", unsafe_allow_html=True) 
 
@@ -151,7 +149,25 @@ if selected_display != "Select Party...":
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
-    st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#00d2ff;'>{selected_display}</span>**", unsafe_allow_html=True)
+    # Header and Download Button aligned
+    col_summary, col_download = st.columns([4, 1])
+    
+    with col_summary:
+        st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#475569;'>{selected_display}</span>**", unsafe_allow_html=True)
+    
+    with col_download:
+        # Convert filtered data to CSV for the download button
+        final_table = filtered_df.drop(columns=['Search_Display'])
+        csv_data = final_table.to_csv(index=False).encode('utf-8')
+        
+        st.download_button(
+            label="⬇️ Download Data",
+            data=csv_data,
+            file_name=f"{selected_display}_cheques.csv",
+            mime="text/csv",
+            use_container_width=True,
+            type="primary"
+        )
     
     # Dashboard Metrics
     m1, m2, m3 = st.columns(3)
@@ -163,7 +179,6 @@ if selected_display != "Select Party...":
     
     # Data Table
     st.markdown("#### 📝 Cheque Details")
-    final_table = filtered_df.drop(columns=['Search_Display'])
     st.dataframe(final_table, use_container_width=True, hide_index=True)
     
 else:
