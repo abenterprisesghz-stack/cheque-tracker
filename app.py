@@ -187,7 +187,7 @@ if selected_display != "Select Party...":
                     🛑 CRITICAL: Out of Cheques
                 </h4>
                 <p style="color: #450a0a; margin: 8px 0 0 0; font-size: 16px; font-weight: 600;">
-                    <b>{selected_display}</b> Currently Cheques in SD <b style="font-size:18px; color: #991b1b;">ZERO</b> available cheques.<br>
+                    <b>{selected_display}</b> Currently Cheques Status at SD <b style="font-size:18px; color: #991b1b;">ZERO</b> availables .<br>
                     <b>Billing operations cannot proceed.</b> Please arrange new cheques for this party immediately!
                 </p>
             </div>
