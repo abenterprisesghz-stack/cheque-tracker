@@ -1,4 +1,4 @@
-import streamlit as st
+#import streamlit as st
 import pandas as pd
 
 # --- Page Setup ---
@@ -267,5 +267,5 @@ if selected_display != "Select Party...":
     # Data Table Rendering
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
-#else:
+else:
     st.info("ℹ️ Please select the party name in the search box.")
