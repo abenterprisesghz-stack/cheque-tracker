@@ -262,7 +262,7 @@ if selected_display != "Select Party...":
             mime="text/csv",
             use_container_width=True,
             type="primary"
-        )
+        
     
     # Data Table Rendering
     st.dataframe(display_df, use_container_width=True, hide_index=True)
