@@ -262,10 +262,10 @@ if selected_display != "Select Party...":
             mime="text/csv",
             use_container_width=True,
             type="primary"
-        
+        )
     
     # Data Table Rendering
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
-else:
+#else:
     st.info("ℹ️ Please select the party name in the search box.")
