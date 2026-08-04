@@ -10,19 +10,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Premium Dashboard CSS (Matching Reference Image) ---
+# --- Enterprise/Legacy Dashboard CSS (Matching Reference Image) ---
 st.markdown("""
     <style>
-    /* Import modern sleek font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
+    /* Classic System Fonts for Enterprise Look */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif !important;
+        font-family: Arial, Tahoma, Verdana, sans-serif !important;
     }
     
-    /* Main Background (Light Gray/Off-white) */
+    /* Main Background (Solid White) */
     .stApp {
-        background-color: #F8F9FB; 
+        background-color: #FFFFFF; 
     }
 
     /* Hide Default Header/Footer */
@@ -30,11 +28,11 @@ st.markdown("""
     header {background-color: transparent !important;}
 
     /* -----------------------------------
-       SIDEBAR STYLING (Dark Blue Theme)
+       SIDEBAR STYLING (GoApptiv Blue Theme)
        ----------------------------------- */
     [data-testid="stSidebar"] {
-        background-color: #2C3E50 !important; /* Dark Professional Blue */
-        border-right: none;
+        background-color: #3b86c4 !important; /* Specific blue from the image */
+        border-right: 2px solid #285e8e;
         padding-top: 1rem;
     }
     
@@ -46,86 +44,89 @@ st.markdown("""
         color: #FFFFFF !important;
     }
     
-    /* Sidebar Top-level Labels (e.g., "Search & Select Party") */
+    /* Sidebar Top-level Labels */
     [data-testid="stSidebar"] label {
-        color: #A6B4CE !important;
-        font-weight: 500 !important;
+        color: #E0E0E0 !important;
+        font-weight: bold !important;
+        font-size: 13px !important;
     }
     
-    /* FIX: Force Radio Button Options to be White */
+    /* Force Radio Button Options to be White */
     [data-testid="stSidebar"] div[role="radiogroup"] label p,
     [data-testid="stSidebar"] div[role="radiogroup"] label div {
         color: #FFFFFF !important;
-        font-weight: 400 !important;
+        font-weight: normal !important;
+        font-size: 13px !important;
     }
 
     /* -----------------------------------
        MAIN CONTENT & CARDS STYLING
        ----------------------------------- */
-    /* Welcome Header Text */
+    /* Welcome Header Text (Styled like the red text in image) */
     .welcome-header {
-        color: #111827;
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 4px;
+        color: #C00000; /* Red emphasis like "Welcome A B ENTERPRISES" */
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 2px;
         margin-top: -20px;
+        text-transform: uppercase;
     }
     .welcome-subtext {
-        color: #6B7280;
-        font-size: 15px;
+        color: #333333;
+        font-size: 12px;
         margin-bottom: 24px;
     }
 
-    /* Metric Cards (White, Rounded, Soft Shadow) */
+    /* Metric Cards (Flat, Square, Functional) */
     div[data-testid="metric-container"] {
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        padding: 20px 24px;
-        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
-        border: 1px solid #F3F4F6;
-        transition: transform 0.2s ease;
-    }
-    div[data-testid="metric-container"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.08);
+        background-color: #F5F5F5;
+        border-radius: 0px; /* Removed rounded corners */
+        padding: 10px 15px;
+        border: 1px solid #CCCCCC;
+        box-shadow: none; /* Removed shadows */
     }
     div[data-testid="stMetricValue"] {
-        color: #1F2937 !important; 
-        font-size: 32px !important;
-        font-weight: 700 !important;
+        color: #000000 !important; 
+        font-size: 24px !important;
+        font-weight: bold !important;
     }
     div[data-testid="stMetricLabel"] {
-        color: #6B7280 !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
+        color: #003366 !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
     }
 
     /* Data Table Section Styling */
     .table-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #111827;
+        font-size: 14px;
+        font-weight: bold;
+        color: #003366;
         margin-top: 20px;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #003366;
+        padding-bottom: 3px;
     }
     
     /* Streamlit Dataframe Box styling */
     div[data-testid="stDataFrame"] {
         background-color: #FFFFFF;
-        border-radius: 12px;
-        border: 1px solid #E5E7EB;
-        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
-        padding: 10px;
+        border-radius: 0px;
+        border: 1px solid #999999;
+        box-shadow: none;
     }
 
-    /* Alerts */
+    /* Alerts (Flat and Standard) */
     .alert-box {
-        padding: 16px 20px;
-        border-radius: 8px;
-        margin-bottom: 24px;
-        background-color: #FFFFFF;
-        border: 1px solid #E5E7EB;
-        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
+        padding: 10px 15px;
+        border-radius: 0px;
+        margin-bottom: 20px;
+        background-color: #FFF9E6;
+        border: 1px solid #E6C200;
+        font-size: 13px;
+    }
+    .alert-box.error {
+        background-color: #FFEEEE;
+        border: 1px solid #CC0000;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -171,31 +172,37 @@ except FileNotFoundError:
     st.error("System Error: 'data.xlsx' database file not found in the directory.")
     st.stop()
 
-# --- Sidebar UI (Dark Theme as per Image) ---
+# --- Sidebar UI (Legacy Blue Theme as per Image) ---
 with st.sidebar:
+    # Classic simple text header
     st.markdown("""
-        <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 30px;'>
-            <div style='background: #3B82F6; color: white; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 20px;'>AB</div>
-            <h2 style='margin: 0; font-size: 20px;'>Enterprises</h2>
+        <div style='margin-bottom: 20px; border-bottom: 1px solid #FFFFFF; padding-bottom: 10px;'>
+            <h2 style='margin: 0; font-size: 18px; font-weight: bold;'>A B ENTERPRISES</h2>
+            <span style='font-size: 11px;'>System Administration</span>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("### Dashboard Menu")
+    st.markdown("<div style='font-size: 14px; font-weight: bold; margin-bottom: 10px;'>Main Menu</div>", unsafe_allow_html=True)
     
     display_list = sorted(list(df['Search_Display'].dropna().unique()))
     selected_display = st.selectbox(
-        "Search & Select Party", 
+        "Select Party Account", 
         ["-- Select a Client --"] + display_list
     )
     
     st.markdown("<br>", unsafe_allow_html=True)
     status_filter = st.radio(
-        "Filter Cheque Status",
+        "Cheque Status Filter",
         ["All Cheques", "Available (Unused)", "Cleared (Used)"]
     )
     
-    st.markdown("<br><hr style='border-color: #4B5563;'>", unsafe_allow_html=True)
-    st.caption(f"📅 Last Sync: {datetime.now().strftime('%d-%b-%Y')}")
+    st.markdown("<br><hr style='border-color: #619cd0;'>", unsafe_allow_html=True)
+    # Date stylized like the image "PharmaNET Date 04-Aug-2026"
+    st.markdown(f"""
+        <div style="font-size: 11px;">
+            System Date <span style="color: #FFCCCC; font-weight: bold;">{datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</span>
+        </div>
+    """, unsafe_allow_html=True)
 
 # --- Main Dashboard UI ---
 if selected_display != "-- Select a Client --":
@@ -208,38 +215,38 @@ if selected_display != "-- Select a Client --":
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
-    # --- Top Welcome Header ---
+    # --- Top Welcome Header (Styled matching the red text in reference) ---
     st.markdown(f"""
-        <div class="welcome-header">Client Overview: {selected_display.split('(')[0].strip()}</div>
-        <div class="welcome-subtext">Here is a summary of the cheque inventory and recent activity.</div>
+        <div class="welcome-header">Welcome {selected_display.split('(')[0].strip()}</div>
+        <div class="welcome-subtext">Inventory status and account cheque history.</div>
     """, unsafe_allow_html=True)
     
     # --- Alerts Engine ---
     if unused_count == 0:
         st.markdown(f"""
-            <div class="alert-box" style="border-left: 4px solid #EF4444;">
-                <strong style="color: #DC2626; font-size: 16px;">🛑 Action Required: Out of Cheques</strong><br>
-                <span style="color: #4B5563; font-size: 14px;">This client has 0 cheques available. Please procure new cheques immediately.</span>
+            <div class="alert-box error">
+                <strong style="color: #CC0000;">SYSTEM ALERT: Out of Cheques</strong><br>
+                <span style="color: #333333;">This account currently holds 0 unused cheques. Manual intervention required.</span>
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
         st.markdown(f"""
-            <div class="alert-box" style="border-left: 4px solid #F59E0b;">
-                <strong style="color: #D97706; font-size: 16px;">⚠️ Low Inventory Warning</strong><br>
-                <span style="color: #4B5563; font-size: 14px;">Only <b>{unused_count}</b> unused cheque(s) remaining.</span>
+            <div class="alert-box">
+                <strong style="color: #B38F00;">WARNING: Low Inventory</strong><br>
+                <span style="color: #333333;">Only <b>{unused_count}</b> unused cheque(s) remaining in the system.</span>
             </div>
         """, unsafe_allow_html=True)
 
-    # --- KPI Metric Cards (Like the Image) ---
+    # --- KPI Metric Cards ---
     m1, m2, m3 = st.columns(3)
-    m1.metric("Total Logged", total_count)
-    m2.metric("Used / Cleared", used_count)
+    m1.metric("Total Cheques Logged", total_count)
+    m2.metric("Used / Cleared Cheques", used_count)
     m3.metric("Available (Unused)", unused_count)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     # --- Table Section ---
-    st.markdown('<div class="table-title">Recent Cheque Logs</div>', unsafe_allow_html=True)
+    st.markdown('<div class="table-title">Account Cheque Register</div>', unsafe_allow_html=True)
     
     # Apply Filters
     display_df = final_table.copy()
@@ -249,12 +256,11 @@ if selected_display != "-- Select a Client --":
         display_df = display_df[display_df['Status'].str.upper() == 'USE']
 
     # Render Auto-fit Table
-    # use_container_width=True ensures ALL COLUMNS AUTOFIT to the screen width
     st.dataframe(
         display_df, 
         use_container_width=True, 
         hide_index=True,
-        height=400 # Fixes height to make scrolling smooth like a professional table
+        height=400 
     )
     
     # Download Button at bottom right
@@ -263,7 +269,7 @@ if selected_display != "-- Select a Client --":
     with d_col2:
         csv_data = display_df.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="⬇️ Download CSV",
+            label="Export Data (CSV)",
             data=csv_data,
             file_name=f"{selected_display}_Cheques.csv",
             mime="text/csv",
@@ -273,8 +279,8 @@ if selected_display != "-- Select a Client --":
 else:
     # --- Empty State (When app opens) ---
     st.markdown("""
-        <div style="margin-top: 100px; padding: 40px; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0px 4px 12px rgba(0,0,0,0.03); border: 1px solid #E5E7EB;">
-            <div class="welcome-header">Welcome to the Dashboard</div>
-            <div class="welcome-subtext" style="margin-bottom: 0;">Please open the sidebar on the left and search for a Client to view their cheque summary and details.</div>
+        <div style="margin-top: 50px; padding: 20px; background-color: #F8F8F8; border: 1px solid #DDDDDD;">
+            <div class="welcome-header" style="color: #003366;">A B ENTERPRISES SYSTEM DASHBOARD</div>
+            <div class="welcome-subtext" style="margin-bottom: 0;">Please utilize the left navigation menu to select a Party Account and view the inventory records.</div>
         </div>
     """, unsafe_allow_html=True)
