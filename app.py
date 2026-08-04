@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
+import glob
 
 # --- Page Setup ---
 st.set_page_config(
@@ -178,7 +180,7 @@ if app_mode == "Cheque Dashboard":
         if 'Status' in df.columns:
             df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
         else:
-            st.error("System Error: 'Status' column missing.")
+            st.error("System Error: 'Status' column missing in data.xlsx.")
             st.stop()
 
         if 'CITY' in df.columns:
@@ -281,31 +283,45 @@ if app_mode == "Cheque Dashboard":
 # MODULE 2: SALES & INVOICES DASHBOARD
 # ==========================================
 elif app_mode == "Sales & Invoices Dashboard":
-    with st.sidebar:
-        st.markdown("<div class='table-title' style='margin-top:0;'>Upload Daily Data</div>", unsafe_allow_html=True)
-        # Added a file uploader so you can upload the file directly on the web app!
-        uploaded_file = st.file_uploader("Upload Sales Excel", type=["xlsx", "xls"])
         
     @st.cache_data(ttl=60)
-    def load_sales_data(file):
-        df = pd.read_excel(file)
-        # Format the Date column if it exists
-        if 'Doc.Date' in df.columns:
-            df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
-        return df
-
-    sales_df = None
-    try:
-        if uploaded_file is not None:
-            sales_df = load_sales_data(uploaded_file)
-        else:
-            # Fallback to backend folder file
-            sales_df = load_sales_data("Pfizer Anchor PLUS 29-July-26.xlsx")
-            st.sidebar.caption("✅ Auto-loaded: 'Pfizer Anchor PLUS 29-July-26.xlsx' from server.")
-    except FileNotFoundError:
-        st.error("No Sales Data Found. Please upload your daily Excel file in the sidebar.")
+    def auto_load_sales_data():
+        # Get all Excel files in the current folder
+        all_excel_files = glob.glob("*.xlsx") + glob.glob("*.xls")
         
-    if sales_df is not None and not sales_df.empty:
+        # Remove 'data.xlsx' (Cheque file) from the list
+        sales_files = [f for f in all_excel_files if f.lower() != 'data.xlsx']
+        
+        if not sales_files:
+            return None, None
+            
+        # Sort files by modification time, so it always picks the latest one uploaded
+        sales_files.sort(key=os.path.getmtime, reverse=True)
+        latest_file = sales_files[0]
+        
+        try:
+            df = pd.read_excel(latest_file)
+            # Format the Date column if it exists
+            if 'Doc.Date' in df.columns:
+                df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
+            return df, latest_file
+        except Exception as e:
+            st.error(f"Error reading file {latest_file}: {e}")
+            return None, None
+
+    sales_df, loaded_filename = auto_load_sales_data()
+    
+    if sales_df is None:
+        st.markdown("""
+            <div style="margin-top: 60px; padding: 40px; background-color: #FFFFFF; border-radius: 16px; box-shadow: 0px 4px 12px rgba(0,0,0,0.05); text-align: center;">
+                <div style="background-color: #FCE8E6; width: 64px; height: 64px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px auto; font-size: 28px;">
+                    ⚠️
+                </div>
+                <div class="welcome-header">No Sales Data Found</div>
+                <div class="welcome-subtext">Please place your daily sales Excel file (any name) in the same folder as this script.</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
         # Get Unique Divisions
         if 'Division Name' in sales_df.columns:
             divisions = ["All Divisions"] + sorted(sales_df['Division Name'].dropna().unique().tolist())
@@ -313,6 +329,9 @@ elif app_mode == "Sales & Invoices Dashboard":
             divisions = ["All Divisions"]
             
         with st.sidebar:
+            st.markdown(f"<div style='color: #1A73E8; font-size: 13px; font-weight: 500;'>📂 Loaded: {loaded_filename}</div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            
             selected_division = st.selectbox("Select Division", divisions)
             st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
@@ -322,7 +341,7 @@ elif app_mode == "Sales & Invoices Dashboard":
         else:
             filtered_sales = sales_df
             
-        # Calculate KPIs based on the specific columns in your file
+        # Calculate KPIs
         total_amount = filtered_sales['Net Amount'].sum() if 'Net Amount' in filtered_sales.columns else 0
         total_qty = filtered_sales['Net Qty'].sum() if 'Net Qty' in filtered_sales.columns else 0
         invoice_count = filtered_sales['Customer Invoice No'].nunique() if 'Customer Invoice No' in filtered_sales.columns else 0
