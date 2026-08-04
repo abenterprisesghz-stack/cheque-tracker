@@ -4,41 +4,60 @@ from datetime import datetime
 
 # --- Page Setup ---
 st.set_page_config(
-    page_title="Cheque Management System | AB Enterprises", 
+    page_title="AB Enterprises | Cheque Tracking Portal", 
     page_icon="🏢", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- Modern Corporate CSS (SaaS UI) ---
+# --- Premium Corporate CSS (Ultra-Smooth UI) ---
 st.markdown("""
     <style>
-    /* Global App Background */
+    /* Import modern sleek font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* Global App Background & Font */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif !important;
+    }
+    
     .stApp {
-        background-color: #f8fafc;
-        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        background-color: #f9fafb; /* Very soft neutral gray */
     }
 
-    /* Hide only default Streamlit footer (Header kept visible for sidebar toggle button) */
+    /* Hide only default Streamlit footer */
     footer {visibility: hidden;}
 
     /* Sidebar Styling */
     [data-testid="stSidebar"] {
         background-color: #ffffff;
-        border-right: 1px solid #e2e8f0;
+        border-right: 1px solid #f3f4f6;
     }
 
     /* Modern Corporate Header */
     .corporate-header {
         background: #ffffff;
         padding: 24px 32px;
-        border-radius: 12px;
-        border-top: 5px solid #1e40af; /* Corporate Navy Blue */
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f3f4f6;
         margin-bottom: 2rem;
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .header-icon {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        border-radius: 14px;
+        padding: 16px;
+        font-size: 32px;
+        color: white;
+        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .company-title {
@@ -51,49 +70,53 @@ st.markdown("""
     
     .company-sub {
         color: #64748b;
-        margin: 4px 0 0 0;
-        font-size: 13px;
-        font-weight: 500;
+        margin: 6px 0 0 0;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 0.2px;
     }
 
-    /* KPI Metric Cards */
+    /* KPI Metric Cards - Smoother Hover Effects */
     div[data-testid="metric-container"] {
         background-color: #ffffff;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 20px;
-        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f3f4f6;
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     div[data-testid="metric-container"]:hover {
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transform: translateY(-2px);
-        border-color: #cbd5e1;
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+        border-color: #e2e8f0;
     }
     div[data-testid="stMetricValue"] {
-        color: #1e293b !important; 
-        font-size: 32px !important;
+        color: #0f172a !important; 
+        font-size: 36px !important;
         font-weight: 700 !important;
+        letter-spacing: -1px;
     }
     div[data-testid="stMetricLabel"] {
         color: #64748b !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 600 !important;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        margin-bottom: 8px;
     }
 
     /* Dataframe Container */
     div[data-testid="stDataFrame"] {
-        border-radius: 8px;
+        border-radius: 12px;
         border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        background: #ffffff;
     }
 
-    /* Alert Styling - Clean & Professional */
+    /* Alert Styling - Softer edges & colors */
     .alert-box {
-        padding: 16px 20px;
-        border-radius: 8px;
+        padding: 20px 24px;
+        border-radius: 12px;
         margin-bottom: 24px;
         display: flex;
         flex-direction: column;
@@ -101,32 +124,36 @@ st.markdown("""
     }
     .alert-critical {
         background-color: #fef2f2;
-        border-left: 4px solid #dc2626;
-        border-right: 1px solid #fee2e2;
-        border-top: 1px solid #fee2e2;
-        border-bottom: 1px solid #fee2e2;
+        border-left: 5px solid #ef4444;
+        box-shadow: 0 2px 10px rgba(239, 68, 68, 0.05);
     }
     .alert-warning {
         background-color: #fffbeb;
-        border-left: 4px solid #d97706;
-        border-right: 1px solid #fef3c7;
-        border-top: 1px solid #fef3c7;
-        border-bottom: 1px solid #fef3c7;
+        border-left: 5px solid #f59e0b;
+        box-shadow: 0 2px 10px rgba(245, 158, 11, 0.05);
     }
     .alert-title {
         margin: 0;
         font-size: 16px;
-        font-weight: 700;
+        font-weight: 600;
+        letter-spacing: -0.2px;
     }
     .alert-text {
-        margin: 4px 0 0 0;
+        margin: 6px 0 0 0;
         font-size: 14px;
+        line-height: 1.5;
     }
 
-    /* Section Titles */
+    /* Standardizing headings */
     h3, h4 {
-        color: #1e293b !important;
+        color: #0f172a !important;
         font-weight: 600 !important;
+        letter-spacing: -0.3px;
+    }
+    
+    /* Input and Select box styling */
+    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+        border-radius: 8px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -163,13 +190,11 @@ except FileNotFoundError:
 # 1. Main Header
 st.markdown("""
     <div class="corporate-header">
-        <div style="background-color: #1e40af; border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: center;">
-            <span style="font-size: 28px; color: white;">🏢</span>
-        </div>
+        <div class="header-icon">🏢</div>
         <div>
             <h1 class="company-title">AB Enterprises</h1>
             <p class="company-sub">
-                Cheque Inventory & Financial Tracking System • C-44, Site No. 3, Meerut Road, Ghaziabad
+                Cheque Tracking & Management Portal • C-44, Site No. 3, Meerut Road, Ghaziabad
             </p>
         </div>
     </div>
@@ -195,7 +220,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.caption(f"System Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    st.caption("v2.1.0 | Authorized Personnel Only")
+    st.caption("v2.2.0 | Authorized Personnel Only")
 
 # 3. Main Dashboard Area
 if selected_display != "-- Select a Client --":
@@ -212,18 +237,18 @@ if selected_display != "-- Select a Client --":
     if unused_count == 0:
         st.markdown(f"""
             <div class="alert-box alert-critical">
-                <p class="alert-title" style="color: #991b1b;">🛑 CRITICAL: Cheque Inventory Exhausted</p>
-                <p class="alert-text" style="color: #7f1d1d;">
-                    <b>{selected_display}</b> currently has <b>0</b> cheques available. Billing operations are suspended. Please procure new cheques immediately to resume operations.
+                <p class="alert-title" style="color: #b91c1c;">🛑 CRITICAL: Cheque Inventory Exhausted</p>
+                <p class="alert-text" style="color: #991b1b;">
+                    <b>{selected_display}</b> currently has <b>0</b> cheques available. Operations requiring physical cheques are paused. Please procure a new chequebook immediately.
                 </p>
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
         st.markdown(f"""
             <div class="alert-box alert-warning">
-                <p class="alert-title" style="color: #92400e;">⚠️ WARNING: Low Inventory Threshold</p>
-                <p class="alert-text" style="color: #b45309;">
-                    <b>{selected_display}</b> has only <b>{unused_count}</b> unused cheque(s) remaining. Please arrange for a new chequebook to avoid operational delays.
+                <p class="alert-title" style="color: #b45309;">⚠️ WARNING: Low Inventory Threshold</p>
+                <p class="alert-text" style="color: #92400e;">
+                    <b>{selected_display}</b> has only <b>{unused_count}</b> unused cheque(s) remaining. Please arrange for new cheques to avoid operational delays.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -239,9 +264,9 @@ if selected_display != "-- Select a Client --":
     # --- Data View Section ---
     col1, col2 = st.columns([3, 1], gap="medium")
     with col1:
-        st.markdown("### 📋 Client Ledger")
+        st.markdown("### 📋 Cheque Ledger")
     with col2:
-        search_term = st.text_input("🔍 Quick Search", placeholder="Ref No, Amount, etc...")
+        search_term = st.text_input("🔍 Quick Search", placeholder="Cheque No, Bank, etc...")
 
     # Apply Sidebar & Search Filters
     display_df = final_table.copy()
@@ -263,9 +288,9 @@ if selected_display != "-- Select a Client --":
     d_col1, d_col2 = st.columns([4, 1])
     with d_col2:
         st.download_button(
-            label="⬇️ Export to CSV",
+            label="⬇️ Export Data (CSV)",
             data=csv_data,
-            file_name=f"{selected_display}_Audit_Report_{datetime.now().strftime('%Y%m%d')}.csv",
+            file_name=f"{selected_display}_Cheque_Log_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
             use_container_width=True,
             type="primary"
@@ -273,8 +298,9 @@ if selected_display != "-- Select a Client --":
 else:
     # Empty State Configuration
     st.markdown("""
-        <div style="text-align: center; margin-top: 100px; color: #64748b;">
-            <h2 style="color: #94a3b8; font-weight: 500;">Welcome to the Financial Portal</h2>
-            <p>Please select a Client from the sidebar navigation on the left to view their cheque inventory and ledger.</p>
+        <div style="text-align: center; margin-top: 120px; color: #64748b; padding: 40px; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📂</div>
+            <h2 style="color: #0f172a; font-weight: 600; font-size: 22px; margin-bottom: 8px;">Welcome to the Cheque Tracking Portal</h2>
+            <p style="font-size: 15px; line-height: 1.6;">Please select a Client from the sidebar navigation on the left to view their specific cheque inventory and usage history.</p>
         </div>
     """, unsafe_allow_html=True)
