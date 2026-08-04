@@ -5,135 +5,161 @@ from datetime import datetime
 # --- Page Setup ---
 st.set_page_config(
     page_title="Cheque Dashboard | AB Enterprises", 
-    page_icon="💼", 
-    layout="wide"
+    page_icon="📱", 
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# --- Enterprise/Legacy Dashboard CSS (Matching Reference Image) ---
+# --- Android OS / Material Design CSS ---
 st.markdown("""
     <style>
-    /* Classic System Fonts for Enterprise Look */
+    /* Import Android standard font (Roboto) */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
     html, body, [class*="css"] {
-        font-family: Arial, Tahoma, Verdana, sans-serif !important;
+        font-family: 'Roboto', sans-serif !important;
     }
     
-    /* Main Background (Solid White) */
+    /* Main Background (Material Light Gray) */
     .stApp {
-        background-color: #FFFFFF; 
+        background-color: #F8F9FA; 
     }
 
     /* Hide Default Header/Footer */
     footer {visibility: hidden;}
     header {background-color: transparent !important;}
-    
-    /* Remove default top padding */
-    .block-container {
-        padding-top: 1rem !important;
-    }
 
     /* -----------------------------------
-       TOP NAVIGATION BAR STYLING
+       SIDEBAR STYLING (Material Drawer)
        ----------------------------------- */
-    .top-header {
-        background-color: #3b86c4; /* Specific blue from the image */
-        color: white;
-        padding: 12px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 3px solid #285e8e;
-        margin-bottom: 15px;
-        margin-top: -30px;
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: none;
+        box-shadow: 2px 0px 12px rgba(0, 0, 0, 0.08); /* Android drawer shadow */
+        padding-top: 1rem;
     }
-    .top-header h2 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: bold;
-        color: #FFFFFF;
+    
+    /* Sidebar Text Elements */
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] .stMarkdown h1, 
+    [data-testid="stSidebar"] .stMarkdown h2, 
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: #202124 !important; /* Material Dark Gray */
     }
-    .top-header-sub {
-        font-size: 11px;
-        color: #E0E0E0;
+    
+    /* Sidebar Top-level Labels */
+    [data-testid="stSidebar"] label {
+        color: #5F6368 !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+        margin-bottom: 4px;
     }
-    .top-header-date {
-        font-size: 12px;
-        text-align: right;
-    }
-    .top-header-date span {
-        color: #FFCCCC; /* Red/pink emphasis like the image date */
-        font-weight: bold;
-    }
-
-    /* Override Radio Button Font Size */
-    div[role="radiogroup"] label p {
+    
+    /* Sidebar Selectbox & Radio Buttons */
+    [data-testid="stSidebar"] div[role="radiogroup"] label p,
+    [data-testid="stSidebar"] div[role="radiogroup"] label div {
+        color: #202124 !important;
+        font-weight: 400 !important;
         font-size: 14px !important;
     }
 
     /* -----------------------------------
        MAIN CONTENT & CARDS STYLING
        ----------------------------------- */
+    /* Welcome Header Text */
     .welcome-header {
-        color: #C00000; 
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 2px;
-        text-transform: uppercase;
+        color: #202124;
+        font-size: 26px;
+        font-weight: 500; /* Medium weight for Material headers */
+        letter-spacing: -0.5px;
+        margin-bottom: 4px;
+        margin-top: -10px;
     }
     .welcome-subtext {
-        color: #333333;
-        font-size: 12px;
+        color: #5F6368;
+        font-size: 14px;
         margin-bottom: 24px;
     }
 
-    /* Metric Cards (Flat, Square, Functional) */
+    /* Metric Cards (Android Elevated Cards) */
     div[data-testid="metric-container"] {
-        background-color: #F5F5F5;
-        border-radius: 0px; 
-        padding: 10px 15px;
-        border: 1px solid #CCCCCC;
-        box-shadow: none; 
+        background-color: #FFFFFF;
+        border-radius: 16px; /* Android rounded corners */
+        padding: 20px 24px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05); /* Soft elevation */
+        border: 1px solid rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    div[data-testid="metric-container"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
     }
     div[data-testid="stMetricValue"] {
-        color: #000000 !important; 
-        font-size: 24px !important;
-        font-weight: bold !important;
+        color: #1A73E8 !important; /* Google/Android Blue Accent */
+        font-size: 32px !important;
+        font-weight: 500 !important;
     }
     div[data-testid="stMetricLabel"] {
-        color: #003366 !important;
-        font-size: 12px !important;
-        font-weight: bold !important;
+        color: #5F6368 !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     /* Data Table Section Styling */
     .table-title {
-        font-size: 14px;
-        font-weight: bold;
-        color: #003366;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        border-bottom: 1px solid #003366;
-        padding-bottom: 3px;
+        font-size: 18px;
+        font-weight: 500;
+        color: #202124;
+        margin-top: 24px;
+        margin-bottom: 16px;
     }
     
     /* Streamlit Dataframe Box styling */
     div[data-testid="stDataFrame"] {
         background-color: #FFFFFF;
-        border-radius: 0px;
-        border: 1px solid #999999;
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 8px;
     }
 
-    /* Alerts (Flat and Standard) */
+    /* Alerts (Material Snackbars/Banners) */
     .alert-box {
-        padding: 10px 15px;
-        border-radius: 0px;
-        margin-bottom: 20px;
-        background-color: #FFF9E6;
-        border: 1px solid #E6C200;
-        font-size: 13px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        background-color: #FFFFFF;
+        border-left: 6px solid #F9AB00; /* Warning Yellow */
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
     }
     .alert-box.error {
-        background-color: #FFEEEE;
-        border: 1px solid #CC0000;
+        border-left-color: #D93025; /* Material Red */
+    }
+    .alert-title {
+        font-weight: 500;
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+    .alert-text {
+        color: #5F6368;
+        font-size: 14px;
+    }
+    
+    /* Custom Download Button (Material Filled Tonal Button) */
+    [data-testid="baseButton-secondary"] {
+        border-radius: 20px !important; /* Pill shape */
+        background-color: #E8F0FE !important; /* Light blue background */
+        color: #1A73E8 !important; /* Blue text */
+        border: none !important;
+        font-weight: 500 !important;
+        transition: background-color 0.2s ease;
+    }
+    [data-testid="baseButton-secondary"]:hover {
+        background-color: #D2E3FC !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -144,18 +170,21 @@ def load_data():
     df = pd.read_excel("data.xlsx")
     df.columns = df.columns.str.strip()
     
+    # Clean Status
     if 'Status' in df.columns:
         df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
     else:
         st.error("System Error: 'Status' column missing.")
         st.stop()
 
+    # Search Display Setup
     if 'CITY' in df.columns:
         df['CITY'] = df['CITY'].fillna('Unknown')
         df['Search_Display'] = df['Party Name'].astype(str) + " (" + df['CITY'].astype(str) + ")"
     else:
         df['Search_Display'] = df['Party Name'].astype(str)
 
+    # Date Formatting (Remove Time, keep only Date)
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             df[col] = df[col].dt.strftime('%d-%m-%Y')
@@ -163,7 +192,7 @@ def load_data():
             try:
                 df[col] = pd.to_datetime(df[col]).dt.strftime('%d-%m-%Y')
             except:
-                pass
+                pass 
                 
     return df
 
@@ -173,41 +202,35 @@ except FileNotFoundError:
     st.error("System Error: 'data.xlsx' database file not found in the directory.")
     st.stop()
 
-
-# --- Top Horizontal Header & Navigation ---
-st.markdown(f"""
-    <div class="top-header">
-        <div>
-            <h2>A B ENTERPRISES</h2>
-            <div class="top-header-sub">System Administration Panel</div>
+# --- Sidebar UI (Android Drawer Style) ---
+with st.sidebar:
+    # App-like Header in Sidebar
+    st.markdown("""
+        <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #F1F3F4;'>
+            <div style='background-color: #1A73E8; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 500; font-size: 18px;'>
+                AB
+            </div>
+            <div>
+                <h2 style='margin: 0; font-size: 18px; color: #202124; font-weight: 500;'>Enterprises</h2>
+                <div style='color: #5F6368; font-size: 12px;'>Dashboard App</div>
+            </div>
         </div>
-        <div class="top-header-date">
-            Hi There! <br>
-            <span>{datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</span>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-# Layout for controls (Horizontal Dropdowns & Radios)
-ctrl_col1, ctrl_col2 = st.columns([1, 1])
-
-with ctrl_col1:
+    """, unsafe_allow_html=True)
+    
     display_list = sorted(list(df['Search_Display'].dropna().unique()))
     selected_display = st.selectbox(
         "Select Party Account", 
         ["-- Select a Client --"] + display_list
     )
-
-with ctrl_col2:
-    st.markdown("<div style='margin-top: 4px;'></div>", unsafe_allow_html=True)
+    
+    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
     status_filter = st.radio(
         "Cheque Status Filter",
-        ["All Cheques", "Available (Unused)", "Cleared (Used)"],
-        horizontal=True
+        ["All Cheques", "Available (Unused)", "Cleared (Used)"]
     )
-
-st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-color: #CCCCCC;'>", unsafe_allow_html=True)
-
+    
+    st.markdown("<br><hr style='border-color: #F1F3F4;'>", unsafe_allow_html=True)
+    st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
 # --- Main Dashboard UI ---
 if selected_display != "-- Select a Client --":
@@ -221,37 +244,38 @@ if selected_display != "-- Select a Client --":
     unused_count = total_count - used_count
     
     # --- Top Welcome Header ---
+    party_name = selected_display.split('(')[0].strip()
     st.markdown(f"""
-        <div class="welcome-header">Welcome {selected_display.split('(')[0].strip()}</div>
-        <div class="welcome-subtext">Inventory status and account cheque history.</div>
+        <div class="welcome-header">{party_name}</div>
+        <div class="welcome-subtext">Client overview and cheque inventory details.</div>
     """, unsafe_allow_html=True)
     
-    # --- Alerts Engine ---
+    # --- Alerts Engine (Material Snackbars) ---
     if unused_count == 0:
         st.markdown(f"""
             <div class="alert-box error">
-                <strong style="color: #CC0000;">SYSTEM ALERT: Out of Cheques</strong><br>
-                <span style="color: #333333;">This account currently holds 0 unused cheques. Manual intervention required.</span>
+                <span class="alert-title" style="color: #D93025;">Action Required: Out of Cheques</span>
+                <span class="alert-text">This client has 0 cheques available. Please procure new cheques immediately.</span>
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
         st.markdown(f"""
             <div class="alert-box">
-                <strong style="color: #B38F00;">WARNING: Low Inventory</strong><br>
-                <span style="color: #333333;">Only <b>{unused_count}</b> unused cheque(s) remaining in the system.</span>
+                <span class="alert-title" style="color: #F9AB00;">Low Inventory Warning</span>
+                <span class="alert-text">Only <b>{unused_count}</b> unused cheque(s) remaining for this account.</span>
             </div>
         """, unsafe_allow_html=True)
 
     # --- KPI Metric Cards ---
     m1, m2, m3 = st.columns(3)
-    m1.metric("Total Cheques Logged", total_count)
-    m2.metric("Used / Cleared Cheques", used_count)
-    m3.metric("Available (Unused)", unused_count)
+    m1.metric("Total Logged", total_count)
+    m2.metric("Used / Cleared", used_count)
+    m3.metric("Available", unused_count)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     # --- Table Section ---
-    st.markdown('<div class="table-title">Account Cheque Register</div>', unsafe_allow_html=True)
+    st.markdown('<div class="table-title">Recent Activity</div>', unsafe_allow_html=True)
     
     # Apply Filters
     display_df = final_table.copy()
@@ -265,16 +289,16 @@ if selected_display != "-- Select a Client --":
         display_df, 
         use_container_width=True, 
         hide_index=True,
-        height=350 
+        height=400 
     )
     
     # Download Button at bottom right
     st.markdown("<br>", unsafe_allow_html=True)
-    d_col1, d_col2 = st.columns([5, 1])
+    d_col1, d_col2 = st.columns([5, 1.2]) # Adjusted column ratio for pill button
     with d_col2:
         csv_data = display_df.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="Export Data (CSV)",
+            label="Download CSV",
             data=csv_data,
             file_name=f"{selected_display}_Cheques.csv",
             mime="text/csv",
@@ -282,10 +306,13 @@ if selected_display != "-- Select a Client --":
         )
 
 else:
-    # --- Empty State (When app opens) ---
+    # --- Empty State (Material Card) ---
     st.markdown("""
-        <div style="margin-top: 20px; padding: 20px; background-color: #F8F8F8; border: 1px solid #DDDDDD;">
-            <div class="welcome-header" style="color: #003366;">A B ENTERPRISES SYSTEM DASHBOARD</div>
-            <div class="welcome-subtext" style="margin-bottom: 0;">Please utilize the dropdown menu above to select a Party Account and view the inventory records.</div>
+        <div style="margin-top: 60px; padding: 40px; background-color: #FFFFFF; border-radius: 16px; box-shadow: 0px 4px 12px rgba(0,0,0,0.05); text-align: center;">
+            <div style="background-color: #E8F0FE; width: 64px; height: 64px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px auto; font-size: 28px;">
+                📊
+            </div>
+            <div class="welcome-header">Welcome to the Dashboard</div>
+            <div class="welcome-subtext" style="margin-bottom: 0;">Open the sidebar menu and select a client to view their cheque details.</div>
         </div>
     """, unsafe_allow_html=True)
