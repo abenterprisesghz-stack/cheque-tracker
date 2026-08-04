@@ -329,24 +329,45 @@ elif app_mode == "Sales & Invoices Dashboard":
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Get Unique Divisions from the COMBINED data
+        # Generate dropdown options dynamically from the loaded data
         if 'Division Name' in sales_df.columns:
             divisions = ["All Divisions"] + sorted(sales_df['Division Name'].dropna().unique().tolist())
         else:
             divisions = ["All Divisions"]
             
+        if 'Doc.Date' in sales_df.columns:
+            dates = ["All Dates"] + sorted(sales_df['Doc.Date'].dropna().unique().tolist())
+        else:
+            dates = ["All Dates"]
+            
         with st.sidebar:
-            # Dropdown for selecting division
+            st.markdown("<div style='color: #202124; font-weight: 500; font-size: 15px; margin-bottom: 10px;'>Search & Filters</div>", unsafe_allow_html=True)
+            
+            # --- New Filters Added Here ---
             selected_division = st.selectbox("Select Division", divisions)
+            customer_search = st.text_input("Search Customer Name", placeholder="e.g., Apollo Pharmacy")
+            selected_date = st.selectbox("Select Date", dates)
+            
             st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
-        # Filter Logic
+        # --- Filter Execution Logic ---
+        filtered_sales = sales_df.copy()
+        
+        # 1. Filter by Division
         if selected_division != "All Divisions":
-            filtered_sales = sales_df[sales_df['Division Name'] == selected_division]
-        else:
-            filtered_sales = sales_df
+            filtered_sales = filtered_sales[filtered_sales['Division Name'] == selected_division]
             
-        # Calculate KPIs
+        # 2. Filter by Customer Name (Case Insensitive text search)
+        if customer_search.strip() != "":
+            if 'Customer Name' in filtered_sales.columns:
+                filtered_sales = filtered_sales[filtered_sales['Customer Name'].astype(str).str.contains(customer_search, case=False, na=False)]
+                
+        # 3. Filter by Date
+        if selected_date != "All Dates":
+            if 'Doc.Date' in filtered_sales.columns:
+                filtered_sales = filtered_sales[filtered_sales['Doc.Date'] == selected_date]
+            
+        # Calculate KPIs for the filtered data
         total_amount = filtered_sales['Net Amount'].sum() if 'Net Amount' in filtered_sales.columns else 0
         total_qty = filtered_sales['Net Qty'].sum() if 'Net Qty' in filtered_sales.columns else 0
         invoice_count = filtered_sales['Customer Invoice No'].nunique() if 'Customer Invoice No' in filtered_sales.columns else 0
@@ -354,7 +375,7 @@ elif app_mode == "Sales & Invoices Dashboard":
         # Header UI
         st.markdown(f"""
             <div class="welcome-header">Sales & Invoices Overview</div>
-            <div class="welcome-subtext">Viewing data for: <b>{selected_division}</b></div>
+            <div class="welcome-subtext">Viewing data for: <b>{selected_division}</b> | Date: <b>{selected_date}</b></div>
         """, unsafe_allow_html=True)
 
         # Metric Cards
@@ -376,7 +397,7 @@ elif app_mode == "Sales & Invoices Dashboard":
             st.download_button(
                 label="Download CSV",
                 data=csv_sales,
-                file_name=f"Sales_{selected_division}.csv",
+                file_name=f"Sales_Filtered_Data.csv",
                 mime="text/csv",
                 use_container_width=True
             )
