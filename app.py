@@ -4,156 +4,119 @@ from datetime import datetime
 
 # --- Page Setup ---
 st.set_page_config(
-    page_title="AB ENTERPRISES | Cheque Tracking Portal", 
-    page_icon="🏢", 
+    page_title="Cheque Dashboard | AB Enterprises", 
+    page_icon="💼", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- Premium Corporate CSS (Ultra-Smooth UI) ---
+# --- Premium Dashboard CSS (Matching Reference Image) ---
 st.markdown("""
     <style>
     /* Import modern sleek font */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    /* Global App Background & Font */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif !important;
     }
     
+    /* Main Background (Light Gray/Off-white) */
     .stApp {
-        background-color: #f9fafb; /* Very soft neutral gray */
+        background-color: #F8F9FB; 
     }
 
-    /* Hide only default Streamlit footer */
+    /* Hide Default Header/Footer */
     footer {visibility: hidden;}
+    header {background-color: transparent !important;}
 
-    /* Sidebar Styling */
+    /* -----------------------------------
+       SIDEBAR STYLING (Dark Blue Theme)
+       ----------------------------------- */
     [data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #f3f4f6;
+        background-color: #2C3E50 !important; /* Dark Professional Blue */
+        border-right: none;
+        padding-top: 1rem;
+    }
+    /* Sidebar Text Elements */
+    [data-testid="stSidebar"] .stMarkdown p, 
+    [data-testid="stSidebar"] .stMarkdown h1, 
+    [data-testid="stSidebar"] .stMarkdown h2, 
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: #FFFFFF !important;
+    }
+    /* Sidebar Selectbox Label Fix */
+    [data-testid="stSidebar"] label {
+        color: #A6B4CE !important;
+        font-weight: 500 !important;
     }
 
-    /* Modern Corporate Header */
-    .corporate-header {
-        background: #ffffff;
-        padding: 24px 32px;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
-        border: 1px solid #f3f4f6;
-        margin-bottom: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        transition: all 0.3s ease;
-    }
-    
-    .header-icon {
-        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-        border-radius: 14px;
-        padding: 16px;
-        font-size: 32px;
-        color: white;
-        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .company-title {
-        color: #0f172a;
-        margin: 0;
-        font-weight: 700;
-        letter-spacing: -0.5px;
+    /* -----------------------------------
+       MAIN CONTENT & CARDS STYLING
+       ----------------------------------- */
+    /* Welcome Header Text */
+    .welcome-header {
+        color: #111827;
         font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        margin-top: -20px;
     }
-    
-    .company-sub {
-        color: #64748b;
-        margin: 6px 0 0 0;
-        font-size: 14px;
-        font-weight: 400;
-        letter-spacing: 0.2px;
+    .welcome-subtext {
+        color: #6B7280;
+        font-size: 15px;
+        margin-bottom: 24px;
     }
 
-    /* KPI Metric Cards - Smoother Hover Effects */
+    /* Metric Cards (White, Rounded, Soft Shadow) */
     div[data-testid="metric-container"] {
-        background-color: #ffffff;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-        border: 1px solid #f3f4f6;
-        border-radius: 16px;
-        padding: 24px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        padding: 20px 24px;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #F3F4F6;
+        transition: transform 0.2s ease;
     }
     div[data-testid="metric-container"]:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
-        border-color: #e2e8f0;
+        transform: translateY(-2px);
+        box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.08);
     }
     div[data-testid="stMetricValue"] {
-        color: #0f172a !important; 
-        font-size: 36px !important;
+        color: #1F2937 !important; 
+        font-size: 32px !important;
         font-weight: 700 !important;
-        letter-spacing: -1px;
     }
     div[data-testid="stMetricLabel"] {
-        color: #64748b !important;
-        font-size: 13px !important;
+        color: #6B7280 !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-bottom: 8px;
     }
 
-    /* Dataframe Container */
-    div[data-testid="stDataFrame"] {
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        background: #ffffff;
-    }
-
-    /* Alert Styling - Softer edges & colors */
-    .alert-box {
-        padding: 20px 24px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .alert-critical {
-        background-color: #fef2f2;
-        border-left: 5px solid #ef4444;
-        box-shadow: 0 2px 10px rgba(239, 68, 68, 0.05);
-    }
-    .alert-warning {
-        background-color: #fffbeb;
-        border-left: 5px solid #f59e0b;
-        box-shadow: 0 2px 10px rgba(245, 158, 11, 0.05);
-    }
-    .alert-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: -0.2px;
-    }
-    .alert-text {
-        margin: 6px 0 0 0;
-        font-size: 14px;
-        line-height: 1.5;
-    }
-
-    /* Standardizing headings */
-    h3, h4 {
-        color: #0f172a !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.3px;
+    /* Data Table Section Styling */
+    .table-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        margin-top: 20px;
+        margin-bottom: 15px;
     }
     
-    /* Input and Select box styling */
-    .stTextInput input, .stSelectbox div[data-baseweb="select"] {
-        border-radius: 8px !important;
+    /* Streamlit Dataframe Box styling */
+    div[data-testid="stDataFrame"] {
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
+        padding: 10px;
+    }
+
+    /* Alerts */
+    .alert-box {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        background-color: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -164,19 +127,33 @@ def load_data():
     df = pd.read_excel("data.xlsx")
     df.columns = df.columns.str.strip()
     
-    # Validation & Cleaning
+    # 1. Clean Status
     if 'Status' in df.columns:
         df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
     else:
-        st.error("System Error: 'Status' column missing from data source.")
+        st.error("System Error: 'Status' column missing.")
         st.stop()
 
+    # 2. Search Display Setup
     if 'CITY' in df.columns:
         df['CITY'] = df['CITY'].fillna('Unknown')
         df['Search_Display'] = df['Party Name'].astype(str) + " (" + df['CITY'].astype(str) + ")"
     else:
         df['Search_Display'] = df['Party Name'].astype(str)
-        
+
+    # 3. FIX: Date Formatting (Remove Time, keep only Date)
+    for col in df.columns:
+        # Check if the column is a datetime type
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].dt.strftime('%d-%m-%Y')
+        # Also check if column name contains 'date' but was read as string/object
+        elif 'date' in col.lower():
+            try:
+                # Convert to datetime then format to DD-MM-YYYY
+                df[col] = pd.to_datetime(df[col]).dt.strftime('%d-%m-%Y')
+            except:
+                pass # If it fails to convert, leave it as is
+                
     return df
 
 try:
@@ -185,44 +162,33 @@ except FileNotFoundError:
     st.error("System Error: 'data.xlsx' database file not found in the directory.")
     st.stop()
 
-# --- Application UI Layout ---
-
-# 1. Main Header
-st.markdown("""
-    <div class="corporate-header">
-        <div class="header-icon">🏢</div>
-        <div>
-            <h1 class="company-title">AB ENTERPRISES</h1>
-            <p class="company-sub">
-                Cheque Tracking & Management Portal • C-44, Site No. 3, Meerut Road, Ghaziabad
-            </p>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-# 2. Sidebar Controls
+# --- Sidebar UI (Dark Theme as per Image) ---
 with st.sidebar:
-    st.markdown("### 🎛️ Navigation & Filters")
-    st.markdown("---")
+    st.markdown("""
+        <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 30px;'>
+            <div style='background: #3B82F6; color: white; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 20px;'>AB</div>
+            <h2 style='margin: 0; font-size: 20px;'>Enterprises</h2>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("### Dashboard Menu")
     
     display_list = sorted(list(df['Search_Display'].dropna().unique()))
     selected_display = st.selectbox(
-        "Select Party / Client", 
+        "Search & Select Party", 
         ["-- Select a Client --"] + display_list
     )
     
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("**Advanced Filters**")
     status_filter = st.radio(
-        "Filter by Cheque Status",
-        ["All Records", "Unused (Available)", "Used (Cleared)"]
+        "Filter Cheque Status",
+        ["All Cheques", "Available (Unused)", "Cleared (Used)"]
     )
     
-    st.markdown("---")
-    st.caption(f"System Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    st.caption("v2.2.0 | Authorized Personnel Only")
+    st.markdown("<br><hr style='border-color: #4B5563;'>", unsafe_allow_html=True)
+    st.caption(f"📅 Last Sync: {datetime.now().strftime('%d-%b-%Y')}")
 
-# 3. Main Dashboard Area
+# --- Main Dashboard UI ---
 if selected_display != "-- Select a Client --":
     
     # Filter Data
@@ -233,74 +199,73 @@ if selected_display != "-- Select a Client --":
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
+    # --- Top Welcome Header ---
+    st.markdown(f"""
+        <div class="welcome-header">Client Overview: {selected_display.split('(')[0].strip()}</div>
+        <div class="welcome-subtext">Here is a summary of the cheque inventory and recent activity.</div>
+    """, unsafe_allow_html=True)
+    
     # --- Alerts Engine ---
     if unused_count == 0:
         st.markdown(f"""
-            <div class="alert-box alert-critical">
-                <p class="alert-title" style="color: #b91c1c;">🛑 CRITICAL: Cheque Inventory Exhausted</p>
-                <p class="alert-text" style="color: #991b1b;">
-                    <b>{selected_display}</b> currently has <b>0</b> cheques available. Operations requiring physical cheques are paused. Please procure a new chequebook immediately.
-                </p>
+            <div class="alert-box" style="border-left: 4px solid #EF4444;">
+                <strong style="color: #DC2626; font-size: 16px;">🛑 Action Required: Out of Cheques</strong><br>
+                <span style="color: #4B5563; font-size: 14px;">This client has 0 cheques available. Please procure new cheques immediately.</span>
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
         st.markdown(f"""
-            <div class="alert-box alert-warning">
-                <p class="alert-title" style="color: #b45309;">⚠️ WARNING: Low Inventory Threshold</p>
-                <p class="alert-text" style="color: #92400e;">
-                    <b>{selected_display}</b> has only <b>{unused_count}</b> unused cheque(s) remaining. Please arrange for new cheques to avoid operational delays.
-                </p>
+            <div class="alert-box" style="border-left: 4px solid #F59E0b;">
+                <strong style="color: #D97706; font-size: 16px;">⚠️ Low Inventory Warning</strong><br>
+                <span style="color: #4B5563; font-size: 14px;">Only <b>{unused_count}</b> unused cheque(s) remaining.</span>
             </div>
         """, unsafe_allow_html=True)
 
-    # --- KPI Dashboard ---
+    # --- KPI Metric Cards (Like the Image) ---
     m1, m2, m3 = st.columns(3)
-    m1.metric("Total Cheques Logged", total_count)
-    m2.metric("Used Cheques", used_count)
-    m3.metric("Available Inventory", unused_count)
+    m1.metric("Total Logged", total_count)
+    m2.metric("Used / Cleared", used_count)
+    m3.metric("Available (Unused)", unused_count)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # --- Data View Section ---
-    col1, col2 = st.columns([3, 1], gap="medium")
-    with col1:
-        st.markdown("### 📋 Cheque Ledger")
-    with col2:
-        search_term = st.text_input("🔍 Quick Search", placeholder="Cheque No, Bank, etc...")
-
-    # Apply Sidebar & Search Filters
+    # --- Table Section ---
+    st.markdown('<div class="table-title">Recent Cheque Logs</div>', unsafe_allow_html=True)
+    
+    # Apply Filters
     display_df = final_table.copy()
-
-    if status_filter == "Unused (Available)":
+    if status_filter == "Available (Unused)":
         display_df = display_df[display_df['Status'].str.upper() == 'UNUSED']
-    elif status_filter == "Used (Cleared)":
+    elif status_filter == "Cleared (Used)":
         display_df = display_df[display_df['Status'].str.upper() == 'USE']
 
-    if search_term:
-        mask = display_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)
-        display_df = display_df[mask]
-
-    # Render Table & Export
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    # Render Auto-fit Table
+    # use_container_width=True ensures ALL COLUMNS AUTOFIT to the screen width
+    st.dataframe(
+        display_df, 
+        use_container_width=True, 
+        hide_index=True,
+        height=400 # Fixes height to make scrolling smooth like a professional table
+    )
     
-    # Export Button alignment
-    csv_data = display_df.to_csv(index=False).encode('utf-8')
-    d_col1, d_col2 = st.columns([4, 1])
+    # Download Button at bottom right
+    st.markdown("<br>", unsafe_allow_html=True)
+    d_col1, d_col2 = st.columns([5, 1])
     with d_col2:
+        csv_data = display_df.to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="⬇️ Export Data (CSV)",
+            label="⬇️ Download CSV",
             data=csv_data,
-            file_name=f"{selected_display}_Cheque_Log_{datetime.now().strftime('%Y%m%d')}.csv",
+            file_name=f"{selected_display}_Cheques.csv",
             mime="text/csv",
-            use_container_width=True,
-            type="primary"
+            use_container_width=True
         )
+
 else:
-    # Empty State Configuration
+    # --- Empty State (When app opens) ---
     st.markdown("""
-        <div style="text-align: center; margin-top: 120px; color: #64748b; padding: 40px; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1; max-width: 600px; margin-left: auto; margin-right: auto;">
-            <div style="font-size: 48px; margin-bottom: 16px;">📂</div>
-            <h2 style="color: #0f172a; font-weight: 600; font-size: 22px; margin-bottom: 8px;">Welcome to the Cheque Tracking Portal</h2>
-            <p style="font-size: 15px; line-height: 1.6;">Please select a Client from the sidebar navigation on the left to view their specific cheque inventory and usage history.</p>
+        <div style="margin-top: 100px; padding: 40px; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0px 4px 12px rgba(0,0,0,0.03); border: 1px solid #E5E7EB;">
+            <div class="welcome-header">Welcome to the Dashboard</div>
+            <div class="welcome-subtext" style="margin-bottom: 0;">Please open the sidebar on the left and search for a Client to view their cheque summary and details.</div>
         </div>
     """, unsafe_allow_html=True)
