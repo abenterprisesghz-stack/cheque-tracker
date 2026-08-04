@@ -182,7 +182,7 @@ st.markdown(f"""
             <div class="top-header-sub">System Administration Panel</div>
         </div>
         <div class="top-header-date">
-            PharmaNET Login Time<br>
+            Hi There! <br>
             <span>{datetime.now().strftime('%d-%b-%Y %H:%M:%S')}</span>
         </div>
     </div>
