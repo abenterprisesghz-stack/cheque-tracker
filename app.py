@@ -1,147 +1,148 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
 # --- Page Setup ---
-st.set_page_config(page_title="AB Enterprises | Cheque Tracker", page_icon="🏢", layout="wide")
+st.set_page_config(
+    page_title="Cheque Management System | AB Enterprises", 
+    page_icon="🏢", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# --- Custom CSS for Bright Corporate Theme ---
+# --- Modern Corporate CSS (SaaS UI) ---
 st.markdown("""
     <style>
-    /* --- Main App Background Image (Light/Bright Office) --- */
+    /* Global App Background */
     .stApp {
-        background: linear-gradient(rgba(248, 250, 252, 0.85), rgba(248, 250, 252, 0.90)), 
-                    url("https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1920&auto=format&fit=crop");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        background-color: #f8fafc;
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     }
 
-    /* Modern Company Header - Clean white glassmorphism look */
-    .company-header {
-        background: rgba(255, 255, 255, 0.9); 
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+    /* Hide default Streamlit header and footer for a cleaner look */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    /* Modern Corporate Header */
+    .corporate-header {
+        background: #ffffff;
         padding: 24px 32px;
-        border-radius: 8px;
-        border-left: 6px solid #2563eb; /* Royal Blue Accent */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        border-top: 5px solid #1e40af; /* Corporate Navy Blue */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
         margin-bottom: 2rem;
         display: flex;
         align-items: center;
-        gap: 25px;
+        gap: 20px;
     }
     
-    .header-logo {
-        width: 80px;
-        height: auto;
-    }
-
     .company-title {
-        color: #1e3a8a !important; /* Deep Blue Text */
+        color: #0f172a;
         margin: 0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        font-size: 28px;
     }
+    
     .company-sub {
-        color: #64748b !important; 
-        margin: 6px 0 0 0;
-        font-size: 14px;
+        color: #64748b;
+        margin: 4px 0 0 0;
+        font-size: 13px;
         font-weight: 500;
     }
 
-    /* Metric Cards Styling - Clean white with blue accents */
+    /* KPI Metric Cards */
     div[data-testid="metric-container"] {
-        background-color: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 8px;
-        padding: 16px 20px;
-        border-left: 4px solid #2563eb; 
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px;
         transition: all 0.2s ease;
     }
     div[data-testid="metric-container"]:hover {
-        border-left: 4px solid #d97706; /* Amber accent on hover */
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         transform: translateY(-2px);
+        border-color: #cbd5e1;
     }
-    
     div[data-testid="stMetricValue"] {
-        color: #0f172a !important; 
-        font-weight: 800 !important;
+        color: #1e293b !important; 
+        font-size: 32px !important;
+        font-weight: 700 !important;
     }
-
-    /* Dataframe Container styling */
-    div[data-testid="stDataFrame"] {
-        background-color: rgba(255, 255, 255, 0.8);
-        border-radius: 6px;
-        overflow: hidden;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-    }
-
-    /* Alert Box Animation & Styling */
-    @keyframes pulse-border-light {
-        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
-        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    }
-    .critical-alert {
-        background-color: rgba(254, 242, 242, 0.95); 
-        border-left: 6px solid #dc2626; 
-        padding: 18px 20px; 
-        border-radius: 8px; 
-        margin-top: 10px; 
-        margin-bottom: 25px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        animation: pulse-border-light 2s infinite;
-    }
-    .zero-alert {
-        background-color: rgba(254, 226, 226, 0.95); 
-        border-left: 6px solid #991b1b; 
-        padding: 18px 20px; 
-        border-radius: 8px; 
-        margin-top: 10px; 
-        margin-bottom: 25px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        animation: pulse-border-light 1.5s infinite;
-    }
-
-    /* Text coloring for light overlay readability */
-    .stSelectbox label, .stTextInput label, .stRadio label, p {
+    div[data-testid="stMetricLabel"] {
+        color: #64748b !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
-        color: #334155 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
+
+    /* Dataframe Container */
+    div[data-testid="stDataFrame"] {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    /* Alert Styling - Clean & Professional */
+    .alert-box {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .alert-critical {
+        background-color: #fef2f2;
+        border-left: 4px solid #dc2626;
+        border-right: 1px solid #fee2e2;
+        border-top: 1px solid #fee2e2;
+        border-bottom: 1px solid #fee2e2;
+    }
+    .alert-warning {
+        background-color: #fffbeb;
+        border-left: 4px solid #d97706;
+        border-right: 1px solid #fef3c7;
+        border-top: 1px solid #fef3c7;
+        border-bottom: 1px solid #fef3c7;
+    }
+    .alert-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .alert-text {
+        margin: 4px 0 0 0;
+        font-size: 14px;
+    }
+
+    /* Section Titles */
     h3, h4 {
-        color: #0f172a !important;
+        color: #1e293b !important;
+        font-weight: 600 !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Company Header with Corporate Image ---
-st.markdown("""
-    <div class="company-header">
-        <img src="https://cdn-icons-png.flaticon.com/512/2830/2830284.png" class="header-logo" alt="Corporate Logo">
-        <div>
-            <h1 class="company-title">AB ENTERPRISES</h1>
-            <p class="company-sub">
-                📍 ADD: C-44, SITE NO. 3, MEERUT ROAD INDUSTRIAL AREA, GHAZIABAD, U.P.
-            </p>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-# --- Core Logic ---
+# --- Core Logic & Data Loading ---
 @st.cache_data(ttl=60) 
 def load_data():
     df = pd.read_excel("data.xlsx")
     df.columns = df.columns.str.strip()
     
+    # Validation & Cleaning
     if 'Status' in df.columns:
         df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
     else:
-        st.error("❌ Excel mein 'Status' column nahi mila!")
+        st.error("System Error: 'Status' column missing from data source.")
         st.stop()
 
     if 'CITY' in df.columns:
@@ -155,23 +156,52 @@ def load_data():
 try:
     df = load_data()
 except FileNotFoundError:
-    st.error("⚠️ Data file not found. Kripya 'data.xlsx' check karein.")
+    st.error("System Error: 'data.xlsx' database file not found in the directory.")
     st.stop()
 
-# --- Search Section ---
-st.markdown("### 🔍 Search & Filter")
+# --- Application UI Layout ---
 
-display_list = sorted(list(df['Search_Display'].dropna().unique()))
-selected_display = st.selectbox(
-    "Search Party Name:", 
-    ["Select Party..."] + display_list,
-    label_visibility="collapsed"
-)
+# 1. Main Header
+st.markdown("""
+    <div class="corporate-header">
+        <div style="background-color: #1e40af; border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 28px; color: white;">🏢</span>
+        </div>
+        <div>
+            <h1 class="company-title">AB Enterprises</h1>
+            <p class="company-sub">
+                Cheque Inventory & Financial Tracking System • C-44, Site No. 3, Meerut Road, Ghaziabad
+            </p>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True) 
+# 2. Sidebar Controls
+with st.sidebar:
+    st.markdown("### 🎛️ Navigation & Filters")
+    st.markdown("---")
+    
+    display_list = sorted(list(df['Search_Display'].dropna().unique()))
+    selected_display = st.selectbox(
+        "Select Party / Client", 
+        ["-- Select a Client --"] + display_list
+    )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("**Advanced Filters**")
+    status_filter = st.radio(
+        "Filter by Cheque Status",
+        ["All Records", "Unused (Available)", "Used (Cleared)"]
+    )
+    
+    st.markdown("---")
+    st.caption(f"System Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    st.caption("v2.1.0 | Authorized Personnel Only")
 
-# --- Display Logic ---
-if selected_display != "Select Party...":
+# 3. Main Dashboard Area
+if selected_display != "-- Select a Client --":
+    
+    # Filter Data
     filtered_df = df[df['Search_Display'] == selected_display]
     final_table = filtered_df.drop(columns=['Search_Display'])
     
@@ -179,93 +209,73 @@ if selected_display != "Select Party...":
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
-    # --- 🚨 CRITICAL ALERT SYSTEM 🚨 ---
+    # --- Alerts Engine ---
     if unused_count == 0:
         st.markdown(f"""
-            <div class="zero-alert">
-                <h4 style="color: #991b1b; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 800;">
-                    🛑 CRITICAL: Out of Cheques
-                </h4>
-                <p style="color: #450a0a; margin: 8px 0 0 0; font-size: 16px; font-weight: 600;">
-                    <b>{selected_display}</b> Currently Cheques Status at SD <b style="font-size:18px; color: #991b1b;">ZERO</b> availables .<br>
-                    <b>Billing operations cannot proceed.</b> Please arrange new cheques for this party immediately!
+            <div class="alert-box alert-critical">
+                <p class="alert-title" style="color: #991b1b;">🛑 CRITICAL: Cheque Inventory Exhausted</p>
+                <p class="alert-text" style="color: #7f1d1d;">
+                    <b>{selected_display}</b> currently has <b>0</b> cheques available. Billing operations are suspended. Please procure new cheques immediately to resume operations.
                 </p>
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
         st.markdown(f"""
-            <div class="critical-alert">
-                <h4 style="color: #b91c1c; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: 800;">
-                    ⚠️ ACTION REQUIRED: Low Cheque Inventory
-                </h4>
-                <p style="color: #7f1d1d; margin: 8px 0 0 0; font-size: 16px; font-weight: 600;">
-                    <b>{selected_display}</b> has only <b style="font-size:18px; color: #b91c1c;">{unused_count}</b> unused cheque(s) left. <br>
-                    Please send new cheques immediately to avoid any interruption in the billing process.
+            <div class="alert-box alert-warning">
+                <p class="alert-title" style="color: #92400e;">⚠️ WARNING: Low Inventory Threshold</p>
+                <p class="alert-text" style="color: #b45309;">
+                    <b>{selected_display}</b> has only <b>{unused_count}</b> unused cheque(s) remaining. Please arrange for a new chequebook to avoid operational delays.
                 </p>
             </div>
         """, unsafe_allow_html=True)
-    
-    # Dashboard Metrics Top View
+
+    # --- KPI Dashboard ---
     m1, m2, m3 = st.columns(3)
-    m1.metric("📑 Total Cheques", total_count)
-    m2.metric("✅ Used Cheques", used_count)
-    m3.metric("💳 Unused (Available)", unused_count)
+    m1.metric("Total Cheques Logged", total_count)
+    m2.metric("Used Cheques", used_count)
+    m3.metric("Available Inventory", unused_count)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # --- ADVANCED FILTER SECTION ---
-    st.markdown("#### 📝 Cheque Details & Filters")
-    
-    f_col1, f_col2 = st.columns([2, 2])
-    
-    with f_col1:
-        status_filter = st.radio(
-            "Filter by Status:",
-            ["All", "Unused 💳", "Used ✅"],
-            horizontal=True
-        )
-        
-    with f_col2:
-        search_term = st.text_input("🔍 Search (Cheque No, Bank, Amount, etc.):", placeholder="Type to filter...")
+    # --- Data View Section ---
+    col1, col2 = st.columns([3, 1], gap="medium")
+    with col1:
+        st.markdown("### 📋 Client Ledger")
+    with col2:
+        search_term = st.text_input("🔍 Quick Search", placeholder="Ref No, Amount, etc...")
 
-    # Apply the filters to the dataframe
+    # Apply Sidebar & Search Filters
     display_df = final_table.copy()
 
-    # 1. Apply Status Filter
-    if status_filter == "Unused 💳":
+    if status_filter == "Unused (Available)":
         display_df = display_df[display_df['Status'].str.upper() == 'UNUSED']
-    elif status_filter == "Used ✅":
+    elif status_filter == "Used (Cleared)":
         display_df = display_df[display_df['Status'].str.upper() == 'USE']
 
-    # 2. Apply Text Search Filter (Dynamic across all columns)
     if search_term:
         mask = display_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False, na=False)).any(axis=1)
         display_df = display_df[mask]
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # --- MODIFIED LAYOUT: Summary Title & Filtered Download Button ---
-    col_summary, col_download = st.columns([4, 1])
+    # Render Table & Export
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
     
-    with col_summary:
-        st.markdown(f"#### 📊 Dashboard Summary: **<span style='color:#2563eb;'>{selected_display}</span>**", unsafe_allow_html=True)
-        st.caption(f"Showing {len(display_df)} of {len(final_table)} records based on your current filters.")
-    
-    with col_download:
-        # Ab yahan sirf filtered data (display_df) hi CSV me convert hoga
-        csv_data = display_df.to_csv(index=False).encode('utf-8')
-        
+    # Export Button alignment
+    csv_data = display_df.to_csv(index=False).encode('utf-8')
+    d_col1, d_col2 = st.columns([4, 1])
+    with d_col2:
         st.download_button(
-            label="⬇️ Download Data",
+            label="⬇️ Export to CSV",
             data=csv_data,
-            file_name=f"{selected_display}_filtered_cheques.csv",
+            file_name=f"{selected_display}_Audit_Report_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
             use_container_width=True,
             type="primary"
         )
-    
-    # Data Table Rendering
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
-    
 else:
-    st.info("ℹ️ Please select the party name in the search box.")
+    # Empty State Configuration
+    st.markdown("""
+        <div style="text-align: center; margin-top: 100px; color: #64748b;">
+            <h2 style="color: #94a3b8; font-weight: 500;">Welcome to the Financial Portal</h2>
+            <p>Please select a Client from the sidebar navigation to view their cheque inventory and ledger.</p>
+        </div>
+    """, unsafe_allow_html=True)
