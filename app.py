@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import glob
-import difflib # <-- NEW: For Fuzzy Matching
+import difflib
 
 # --- Page Setup ---
 st.set_page_config(
@@ -287,10 +287,7 @@ elif app_mode == "Sales & Invoices Dashboard":
         
     @st.cache_data(ttl=60)
     def auto_load_sales_data():
-        # Get all Excel files in the current folder
         all_excel_files = glob.glob("*.xlsx") + glob.glob("*.xls")
-        
-        # Remove 'data.xlsx' (Cheque file) from the list
         sales_files = [f for f in all_excel_files if f.lower() != 'data.xlsx']
         
         if not sales_files:
@@ -300,7 +297,6 @@ elif app_mode == "Sales & Invoices Dashboard":
         for file in sales_files:
             try:
                 df = pd.read_excel(file)
-                # Format Date
                 if 'Doc.Date' in df.columns:
                     df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
                 all_dfs.append(df)
@@ -340,7 +336,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             st.markdown("<div style='color: #202124; font-weight: 500; font-size: 15px; margin-bottom: 10px;'>Search & Filters</div>", unsafe_allow_html=True)
             
             selected_division = st.selectbox("Select Division", divisions)
-            # Fuzzy match input box
             customer_search = st.text_input("Search Customer Name", placeholder="e.g., Apolo (spelling mistake OK)")
             selected_date = st.selectbox("Select Date", dates)
             
@@ -349,47 +344,46 @@ elif app_mode == "Sales & Invoices Dashboard":
         # --- Filter Execution Logic ---
         filtered_sales = sales_df.copy()
         
-        # 1. Filter by Division
         if selected_division != "All Divisions":
             filtered_sales = filtered_sales[filtered_sales['Division Name'] == selected_division]
             
-        # 2. Filter by Customer Name (FUZZY MATCHING)
-        if customer_search.strip() != "":
-            if 'Customer Name' in filtered_sales.columns:
-                search_term = customer_search.strip().lower()
-                
-                # Function to check spelling similarity
-                def is_fuzzy_match(name):
-                    target_str = str(name).lower()
-                    
-                    # Exact Substring Match (Fastest)
-                    if search_term in target_str:
-                        return True
-                    
-                    # Fuzzy match word by word
-                    words = target_str.split()
-                    for word in words:
-                        # 0.75 means 75% similarity in spelling
-                        if difflib.SequenceMatcher(None, search_term, word).ratio() > 0.75:
-                            return True
-                    
-                    # Overall sequence match
-                    if difflib.SequenceMatcher(None, search_term, target_str).ratio() > 0.60:
-                        return True
-                        
-                    return False
-                
-                filtered_sales = filtered_sales[filtered_sales['Customer Name'].apply(is_fuzzy_match)]
-                
-        # 3. Filter by Date
         if selected_date != "All Dates":
             if 'Doc.Date' in filtered_sales.columns:
                 filtered_sales = filtered_sales[filtered_sales['Doc.Date'] == selected_date]
-            
-        # Calculate KPIs for the filtered data
-        total_amount = filtered_sales['Net Amount'].sum() if 'Net Amount' in filtered_sales.columns else 0
-        total_qty = filtered_sales['Net Qty'].sum() if 'Net Qty' in filtered_sales.columns else 0
-        invoice_count = filtered_sales['Customer Invoice No'].nunique() if 'Customer Invoice No' in filtered_sales.columns else 0
+
+        # Splitting logic for search 
+        is_searching = False
+        matched_sales = None
+        other_sales = filtered_sales.copy()
+
+        if customer_search.strip() != "":
+            is_searching = True
+            if 'Customer Name' in filtered_sales.columns:
+                search_term = customer_search.strip().lower()
+                
+                def is_fuzzy_match(name):
+                    target_str = str(name).lower()
+                    if search_term in target_str:
+                        return True
+                    words = target_str.split()
+                    for word in words:
+                        if difflib.SequenceMatcher(None, search_term, word).ratio() > 0.75:
+                            return True
+                    if difflib.SequenceMatcher(None, search_term, target_str).ratio() > 0.60:
+                        return True
+                    return False
+                
+                mask = filtered_sales['Customer Name'].apply(is_fuzzy_match)
+                
+                matched_sales = filtered_sales[mask]
+                other_sales = filtered_sales[~mask] # Bacha hua data
+                
+        # Metric Cards KPI Logic (Show matched KPI if searching)
+        kpi_df = matched_sales if is_searching and matched_sales is not None else filtered_sales
+        
+        total_amount = kpi_df['Net Amount'].sum() if 'Net Amount' in kpi_df.columns else 0
+        total_qty = kpi_df['Net Qty'].sum() if 'Net Qty' in kpi_df.columns else 0
+        invoice_count = kpi_df['Customer Invoice No'].nunique() if 'Customer Invoice No' in kpi_df.columns else 0
 
         # Header UI
         st.markdown(f"""
@@ -403,16 +397,29 @@ elif app_mode == "Sales & Invoices Dashboard":
         s2.metric("Total Net Quantity", f"{total_qty:,.0f}")
         s3.metric("Unique Invoices", invoice_count)
         
-        st.markdown('<div class="table-title">Invoice Ledger</div>', unsafe_allow_html=True)
-        
-        # Display Table
-        st.dataframe(filtered_sales, use_container_width=True, hide_index=True, height=400)
-        
+        # --- UI DISPLAY (SEPARATED TABLES) ---
+        if is_searching:
+            st.markdown('<div class="table-title" style="color: #1A73E8;">🔍 Search Results (Matched)</div>', unsafe_allow_html=True)
+            if matched_sales is not None and not matched_sales.empty:
+                st.dataframe(matched_sales, use_container_width=True, hide_index=True)
+            else:
+                st.warning("No matches found for your search. Showing other data below.")
+                
+            st.markdown('<div class="table-title" style="margin-top: 40px;">📂 Other Data</div>', unsafe_allow_html=True)
+            st.dataframe(other_sales, use_container_width=True, hide_index=True, height=300)
+            
+            # Download button downloads ONLY the matched data if searched
+            csv_to_download = matched_sales if not matched_sales.empty else other_sales
+        else:
+            st.markdown('<div class="table-title">Invoice Ledger</div>', unsafe_allow_html=True)
+            st.dataframe(filtered_sales, use_container_width=True, hide_index=True, height=500)
+            csv_to_download = filtered_sales
+            
         # Download Filtered Data
         st.markdown("<br>", unsafe_allow_html=True)
         d_col1, d_col2 = st.columns([5, 1.2]) 
         with d_col2:
-            csv_sales = filtered_sales.to_csv(index=False).encode('utf-8')
+            csv_sales = csv_to_download.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="Download CSV",
                 data=csv_sales,
@@ -420,3 +427,4 @@ elif app_mode == "Sales & Invoices Dashboard":
                 mime="text/csv",
                 use_container_width=True
             )
+            
