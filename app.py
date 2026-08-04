@@ -4,7 +4,7 @@ from datetime import datetime
 
 # --- Page Setup ---
 st.set_page_config(
-    page_title="AB Enterprises | Cheque Tracking Portal", 
+    page_title="AB ENTERPRISES | Cheque Tracking Portal", 
     page_icon="🏢", 
     layout="wide",
     initial_sidebar_state="expanded"
