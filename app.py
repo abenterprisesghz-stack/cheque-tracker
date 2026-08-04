@@ -19,8 +19,7 @@ st.markdown("""
         font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     }
 
-    /* Hide default Streamlit header and footer for a cleaner look */
-    header {visibility: hidden;}
+    /* Hide only default Streamlit footer (Header kept visible for sidebar toggle button) */
     footer {visibility: hidden;}
 
     /* Sidebar Styling */
@@ -276,6 +275,6 @@ else:
     st.markdown("""
         <div style="text-align: center; margin-top: 100px; color: #64748b;">
             <h2 style="color: #94a3b8; font-weight: 500;">Welcome to the Financial Portal</h2>
-            <p>Please select a Client from the sidebar navigation to view their cheque inventory and ledger.</p>
+            <p>Please select a Client from the sidebar navigation on the left to view their cheque inventory and ledger.</p>
         </div>
     """, unsafe_allow_html=True)
