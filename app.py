@@ -289,27 +289,36 @@ elif app_mode == "Sales & Invoices Dashboard":
         # Get all Excel files in the current folder
         all_excel_files = glob.glob("*.xlsx") + glob.glob("*.xls")
         
-        # Remove 'data.xlsx' (Cheque file) from the list
+        # Remove 'data.xlsx' (Cheque file) from the list. Everything else is assumed to be sales.
         sales_files = [f for f in all_excel_files if f.lower() != 'data.xlsx']
         
         if not sales_files:
-            return None, None
+            return None, []
             
-        # Sort files by modification time, so it always picks the latest one uploaded
-        sales_files.sort(key=os.path.getmtime, reverse=True)
-        latest_file = sales_files[0]
+        all_dfs = []
+        loaded_files = []
         
-        try:
-            df = pd.read_excel(latest_file)
-            # Format the Date column if it exists
-            if 'Doc.Date' in df.columns:
-                df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
-            return df, latest_file
-        except Exception as e:
-            st.error(f"Error reading file {latest_file}: {e}")
-            return None, None
+        # Loop through ALL found files and combine them
+        for file in sales_files:
+            try:
+                df = pd.read_excel(file)
+                # Format the Date column if it exists
+                if 'Doc.Date' in df.columns:
+                    df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
+                
+                all_dfs.append(df)
+                loaded_files.append(file)
+            except Exception as e:
+                pass # Skip files that are corrupted or not readable
+                
+        if not all_dfs:
+            return None, []
+            
+        # Combine all the different files into one master dataframe
+        combined_df = pd.concat(all_dfs, ignore_index=True)
+        return combined_df, loaded_files
 
-    sales_df, loaded_filename = auto_load_sales_data()
+    sales_df, loaded_filenames = auto_load_sales_data()
     
     if sales_df is None:
         st.markdown("""
@@ -318,18 +327,21 @@ elif app_mode == "Sales & Invoices Dashboard":
                     ⚠️
                 </div>
                 <div class="welcome-header">No Sales Data Found</div>
-                <div class="welcome-subtext">Please place your daily sales Excel file (any name) in the same folder as this script.</div>
+                <div class="welcome-subtext">Please place your daily sales Excel files in the same folder as this script.</div>
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Get Unique Divisions
+        # Get Unique Divisions from the COMBINED data
         if 'Division Name' in sales_df.columns:
             divisions = ["All Divisions"] + sorted(sales_df['Division Name'].dropna().unique().tolist())
         else:
             divisions = ["All Divisions"]
             
         with st.sidebar:
-            st.markdown(f"<div style='color: #1A73E8; font-size: 13px; font-weight: 500;'>📂 Loaded: {loaded_filename}</div>", unsafe_allow_html=True)
+            # Show the user exactly which files have been combined
+            st.markdown("<div style='color: #1A73E8; font-size: 13px; font-weight: 500;'>📂 Combined Files:</div>", unsafe_allow_html=True)
+            for f in loaded_filenames:
+                st.markdown(f"<div style='color: #5F6368; font-size: 12px; padding-left: 10px;'>• {f}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
             selected_division = st.selectbox("Select Division", divisions)
