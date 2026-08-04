@@ -293,10 +293,9 @@ elif app_mode == "Sales & Invoices Dashboard":
         sales_files = [f for f in all_excel_files if f.lower() != 'data.xlsx']
         
         if not sales_files:
-            return None, []
+            return None
             
         all_dfs = []
-        loaded_files = []
         
         # Loop through ALL found files and combine them
         for file in sales_files:
@@ -307,18 +306,17 @@ elif app_mode == "Sales & Invoices Dashboard":
                     df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
                 
                 all_dfs.append(df)
-                loaded_files.append(file)
             except Exception as e:
                 pass # Skip files that are corrupted or not readable
                 
         if not all_dfs:
-            return None, []
+            return None
             
         # Combine all the different files into one master dataframe
         combined_df = pd.concat(all_dfs, ignore_index=True)
-        return combined_df, loaded_files
+        return combined_df
 
-    sales_df, loaded_filenames = auto_load_sales_data()
+    sales_df = auto_load_sales_data()
     
     if sales_df is None:
         st.markdown("""
@@ -338,12 +336,7 @@ elif app_mode == "Sales & Invoices Dashboard":
             divisions = ["All Divisions"]
             
         with st.sidebar:
-            # Show the user exactly which files have been combined
-            st.markdown("<div style='color: #1A73E8; font-size: 13px; font-weight: 500;'>📂 Combined Files:</div>", unsafe_allow_html=True)
-            for f in loaded_filenames:
-                st.markdown(f"<div style='color: #5F6368; font-size: 12px; padding-left: 10px;'>• {f}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            
+            # Dropdown for selecting division
             selected_division = st.selectbox("Select Division", divisions)
             st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
