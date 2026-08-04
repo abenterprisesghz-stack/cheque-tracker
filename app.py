@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import glob
+import difflib # <-- NEW: For Fuzzy Matching
 
 # --- Page Setup ---
 st.set_page_config(
@@ -289,30 +290,26 @@ elif app_mode == "Sales & Invoices Dashboard":
         # Get all Excel files in the current folder
         all_excel_files = glob.glob("*.xlsx") + glob.glob("*.xls")
         
-        # Remove 'data.xlsx' (Cheque file) from the list. Everything else is assumed to be sales.
+        # Remove 'data.xlsx' (Cheque file) from the list
         sales_files = [f for f in all_excel_files if f.lower() != 'data.xlsx']
         
         if not sales_files:
             return None
             
         all_dfs = []
-        
-        # Loop through ALL found files and combine them
         for file in sales_files:
             try:
                 df = pd.read_excel(file)
-                # Format the Date column if it exists
+                # Format Date
                 if 'Doc.Date' in df.columns:
                     df['Doc.Date'] = pd.to_datetime(df['Doc.Date']).dt.strftime('%d-%m-%Y')
-                
                 all_dfs.append(df)
             except Exception as e:
-                pass # Skip files that are corrupted or not readable
+                pass
                 
         if not all_dfs:
             return None
             
-        # Combine all the different files into one master dataframe
         combined_df = pd.concat(all_dfs, ignore_index=True)
         return combined_df
 
@@ -329,7 +326,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Generate dropdown options dynamically from the loaded data
         if 'Division Name' in sales_df.columns:
             divisions = ["All Divisions"] + sorted(sales_df['Division Name'].dropna().unique().tolist())
         else:
@@ -343,9 +339,9 @@ elif app_mode == "Sales & Invoices Dashboard":
         with st.sidebar:
             st.markdown("<div style='color: #202124; font-weight: 500; font-size: 15px; margin-bottom: 10px;'>Search & Filters</div>", unsafe_allow_html=True)
             
-            # --- New Filters Added Here ---
             selected_division = st.selectbox("Select Division", divisions)
-            customer_search = st.text_input("Search Customer Name", placeholder="e.g., Apollo Pharmacy")
+            # Fuzzy match input box
+            customer_search = st.text_input("Search Customer Name", placeholder="e.g., Apolo (spelling mistake OK)")
             selected_date = st.selectbox("Select Date", dates)
             
             st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
@@ -357,10 +353,33 @@ elif app_mode == "Sales & Invoices Dashboard":
         if selected_division != "All Divisions":
             filtered_sales = filtered_sales[filtered_sales['Division Name'] == selected_division]
             
-        # 2. Filter by Customer Name (Case Insensitive text search)
+        # 2. Filter by Customer Name (FUZZY MATCHING)
         if customer_search.strip() != "":
             if 'Customer Name' in filtered_sales.columns:
-                filtered_sales = filtered_sales[filtered_sales['Customer Name'].astype(str).str.contains(customer_search, case=False, na=False)]
+                search_term = customer_search.strip().lower()
+                
+                # Function to check spelling similarity
+                def is_fuzzy_match(name):
+                    target_str = str(name).lower()
+                    
+                    # Exact Substring Match (Fastest)
+                    if search_term in target_str:
+                        return True
+                    
+                    # Fuzzy match word by word
+                    words = target_str.split()
+                    for word in words:
+                        # 0.75 means 75% similarity in spelling
+                        if difflib.SequenceMatcher(None, search_term, word).ratio() > 0.75:
+                            return True
+                    
+                    # Overall sequence match
+                    if difflib.SequenceMatcher(None, search_term, target_str).ratio() > 0.60:
+                        return True
+                        
+                    return False
+                
+                filtered_sales = filtered_sales[filtered_sales['Customer Name'].apply(is_fuzzy_match)]
                 
         # 3. Filter by Date
         if selected_date != "All Dates":
