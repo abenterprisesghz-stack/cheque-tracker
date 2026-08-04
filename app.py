@@ -311,6 +311,16 @@ elif app_mode == "Sales & Invoices Dashboard":
 
     sales_df = auto_load_sales_data()
     
+    # Helper Function to format numbers to 'K' format
+    def format_to_k(val, is_currency=False):
+        try:
+            val = float(val)
+            if abs(val) >= 1000:
+                return f"{val / 1000:.2f}K"
+            return f"{val:.2f}" if is_currency else f"{val:.0f}"
+        except:
+            return "0"
+            
     if sales_df is None:
         st.markdown("""
             <div style="margin-top: 60px; padding: 40px; background-color: #FFFFFF; border-radius: 16px; box-shadow: 0px 4px 12px rgba(0,0,0,0.05); text-align: center;">
@@ -335,7 +345,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             customer_search = st.text_input("Search Customer Name", placeholder="e.g., Apolo (spelling mistake OK)")
             
             # --- Dynamic Date Extraction Logic ---
-            # Filter a temporary df by division first
             temp_sales = sales_df.copy()
             if selected_division != "All Divisions":
                 temp_sales = temp_sales[temp_sales['Division Name'] == selected_division]
@@ -343,7 +352,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             is_searching = False
             mask = None
             
-            # If user searches a customer, filter the temp_sales to ONLY matched customer
             if customer_search.strip() != "":
                 is_searching = True
                 if 'Customer Name' in temp_sales.columns:
@@ -368,7 +376,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             else:
                 date_source_df = temp_sales
                 
-            # Extract unique dates from the fully filtered date_source_df
             if 'Doc.Date' in date_source_df.columns and not date_source_df.empty:
                 dates = ["All Dates"] + sorted(date_source_df['Doc.Date'].dropna().unique().tolist())
             else:
@@ -379,10 +386,8 @@ elif app_mode == "Sales & Invoices Dashboard":
             st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
         # --- Filter Execution & Table Rendering Logic ---
+        filtered_sales = temp_sales 
         
-        filtered_sales = temp_sales # This is the data filtered by division
-        
-        # Split into matched and other data if searching
         if is_searching and mask is not None:
             matched_sales = filtered_sales[mask]
             other_sales = filtered_sales[~mask]
@@ -390,7 +395,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             matched_sales = None
             other_sales = filtered_sales.copy()
             
-        # Apply the final Date selection filter to the tables
         if selected_date != "All Dates":
             if matched_sales is not None and 'Doc.Date' in matched_sales.columns:
                 matched_sales = matched_sales[matched_sales['Doc.Date'] == selected_date]
@@ -399,7 +403,7 @@ elif app_mode == "Sales & Invoices Dashboard":
             if not is_searching and 'Doc.Date' in filtered_sales.columns:
                 filtered_sales = filtered_sales[filtered_sales['Doc.Date'] == selected_date]
 
-        # Calculate KPIs (Focus on searched party if searching, otherwise overall)
+        # Calculate KPIs
         kpi_df = matched_sales if (is_searching and matched_sales is not None) else filtered_sales
         
         total_amount = kpi_df['Net Amount'].sum() if 'Net Amount' in kpi_df.columns else 0
@@ -412,11 +416,11 @@ elif app_mode == "Sales & Invoices Dashboard":
             <div class="welcome-subtext">Viewing data for: <b>{selected_division}</b> | Date: <b>{selected_date}</b></div>
         """, unsafe_allow_html=True)
 
-        # Metric Cards
+        # Metric Cards (Applied 'K' Formatting here)
         s1, s2, s3 = st.columns(3)
-        s1.metric("Total Net Amount", f"₹ {total_amount:,.2f}")
-        s2.metric("Total Net Quantity", f"{total_qty:,.0f}")
-        s3.metric("Unique Invoices", invoice_count)
+        s1.metric("Total Net Amount", f"₹ {format_to_k(total_amount, is_currency=True)}")
+        s2.metric("Total Net Quantity", format_to_k(total_qty))
+        s3.metric("Unique Invoices", format_to_k(invoice_count))
         
         # --- UI DISPLAY (SEPARATED TABLES) ---
         if is_searching:
@@ -429,7 +433,6 @@ elif app_mode == "Sales & Invoices Dashboard":
             st.markdown('<div class="table-title" style="margin-top: 40px;">📂 Other Data (Same Date / Category)</div>', unsafe_allow_html=True)
             st.dataframe(other_sales, use_container_width=True, hide_index=True, height=300)
             
-            # Download button downloads ONLY the matched data if searched
             csv_to_download = matched_sales if (matched_sales is not None and not matched_sales.empty) else other_sales
         else:
             st.markdown('<div class="table-title">Invoice Ledger</div>', unsafe_allow_html=True)
