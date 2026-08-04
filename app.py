@@ -192,7 +192,7 @@ st.markdown("""
     <div class="corporate-header">
         <div class="header-icon">🏢</div>
         <div>
-            <h1 class="company-title">AB Enterprises</h1>
+            <h1 class="company-title">AB ENTERPRISES</h1>
             <p class="company-sub">
                 Cheque Tracking & Management Portal • C-44, Site No. 3, Meerut Road, Ghaziabad
             </p>
