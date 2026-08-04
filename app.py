@@ -37,6 +37,7 @@ st.markdown("""
         border-right: none;
         padding-top: 1rem;
     }
+    
     /* Sidebar Text Elements */
     [data-testid="stSidebar"] .stMarkdown p, 
     [data-testid="stSidebar"] .stMarkdown h1, 
@@ -44,10 +45,18 @@ st.markdown("""
     [data-testid="stSidebar"] .stMarkdown h3 {
         color: #FFFFFF !important;
     }
-    /* Sidebar Selectbox Label Fix */
+    
+    /* Sidebar Top-level Labels (e.g., "Search & Select Party") */
     [data-testid="stSidebar"] label {
         color: #A6B4CE !important;
         font-weight: 500 !important;
+    }
+    
+    /* FIX: Force Radio Button Options to be White */
+    [data-testid="stSidebar"] div[role="radiogroup"] label p,
+    [data-testid="stSidebar"] div[role="radiogroup"] label div {
+        color: #FFFFFF !important;
+        font-weight: 400 !important;
     }
 
     /* -----------------------------------
