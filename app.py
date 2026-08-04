@@ -322,64 +322,85 @@ elif app_mode == "Sales & Invoices Dashboard":
             </div>
         """, unsafe_allow_html=True)
     else:
+        # Calculate base divisions
         if 'Division Name' in sales_df.columns:
             divisions = ["All Divisions"] + sorted(sales_df['Division Name'].dropna().unique().tolist())
         else:
             divisions = ["All Divisions"]
-            
-        if 'Doc.Date' in sales_df.columns:
-            dates = ["All Dates"] + sorted(sales_df['Doc.Date'].dropna().unique().tolist())
-        else:
-            dates = ["All Dates"]
             
         with st.sidebar:
             st.markdown("<div style='color: #202124; font-weight: 500; font-size: 15px; margin-bottom: 10px;'>Search & Filters</div>", unsafe_allow_html=True)
             
             selected_division = st.selectbox("Select Division", divisions)
             customer_search = st.text_input("Search Customer Name", placeholder="e.g., Apolo (spelling mistake OK)")
+            
+            # --- Dynamic Date Extraction Logic ---
+            # Filter a temporary df by division first
+            temp_sales = sales_df.copy()
+            if selected_division != "All Divisions":
+                temp_sales = temp_sales[temp_sales['Division Name'] == selected_division]
+                
+            is_searching = False
+            mask = None
+            
+            # If user searches a customer, filter the temp_sales to ONLY matched customer
+            if customer_search.strip() != "":
+                is_searching = True
+                if 'Customer Name' in temp_sales.columns:
+                    search_term = customer_search.strip().lower()
+                    
+                    def is_fuzzy_match(name):
+                        target_str = str(name).lower()
+                        if search_term in target_str:
+                            return True
+                        words = target_str.split()
+                        for word in words:
+                            if difflib.SequenceMatcher(None, search_term, word).ratio() > 0.75:
+                                return True
+                        if difflib.SequenceMatcher(None, search_term, target_str).ratio() > 0.60:
+                            return True
+                        return False
+                    
+                    mask = temp_sales['Customer Name'].apply(is_fuzzy_match)
+                    date_source_df = temp_sales[mask]
+                else:
+                    date_source_df = temp_sales
+            else:
+                date_source_df = temp_sales
+                
+            # Extract unique dates from the fully filtered date_source_df
+            if 'Doc.Date' in date_source_df.columns and not date_source_df.empty:
+                dates = ["All Dates"] + sorted(date_source_df['Doc.Date'].dropna().unique().tolist())
+            else:
+                dates = ["All Dates"]
+                
             selected_date = st.selectbox("Select Date", dates)
             
             st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
-        # --- Filter Execution Logic ---
-        filtered_sales = sales_df.copy()
+        # --- Filter Execution & Table Rendering Logic ---
         
-        if selected_division != "All Divisions":
-            filtered_sales = filtered_sales[filtered_sales['Division Name'] == selected_division]
+        filtered_sales = temp_sales # This is the data filtered by division
+        
+        # Split into matched and other data if searching
+        if is_searching and mask is not None:
+            matched_sales = filtered_sales[mask]
+            other_sales = filtered_sales[~mask]
+        else:
+            matched_sales = None
+            other_sales = filtered_sales.copy()
             
+        # Apply the final Date selection filter to the tables
         if selected_date != "All Dates":
-            if 'Doc.Date' in filtered_sales.columns:
+            if matched_sales is not None and 'Doc.Date' in matched_sales.columns:
+                matched_sales = matched_sales[matched_sales['Doc.Date'] == selected_date]
+            if 'Doc.Date' in other_sales.columns:
+                other_sales = other_sales[other_sales['Doc.Date'] == selected_date]
+            if not is_searching and 'Doc.Date' in filtered_sales.columns:
                 filtered_sales = filtered_sales[filtered_sales['Doc.Date'] == selected_date]
 
-        # Splitting logic for search 
-        is_searching = False
-        matched_sales = None
-        other_sales = filtered_sales.copy()
-
-        if customer_search.strip() != "":
-            is_searching = True
-            if 'Customer Name' in filtered_sales.columns:
-                search_term = customer_search.strip().lower()
-                
-                def is_fuzzy_match(name):
-                    target_str = str(name).lower()
-                    if search_term in target_str:
-                        return True
-                    words = target_str.split()
-                    for word in words:
-                        if difflib.SequenceMatcher(None, search_term, word).ratio() > 0.75:
-                            return True
-                    if difflib.SequenceMatcher(None, search_term, target_str).ratio() > 0.60:
-                        return True
-                    return False
-                
-                mask = filtered_sales['Customer Name'].apply(is_fuzzy_match)
-                
-                matched_sales = filtered_sales[mask]
-                other_sales = filtered_sales[~mask] # Bacha hua data
-                
-        # Metric Cards KPI Logic (Show matched KPI if searching)
-        kpi_df = matched_sales if is_searching and matched_sales is not None else filtered_sales
+        # Calculate KPIs (Focus on searched party if searching, otherwise overall)
+        kpi_df = matched_sales if (is_searching and matched_sales is not None) else filtered_sales
         
         total_amount = kpi_df['Net Amount'].sum() if 'Net Amount' in kpi_df.columns else 0
         total_qty = kpi_df['Net Qty'].sum() if 'Net Qty' in kpi_df.columns else 0
@@ -405,11 +426,11 @@ elif app_mode == "Sales & Invoices Dashboard":
             else:
                 st.warning("No matches found for your search. Showing other data below.")
                 
-            st.markdown('<div class="table-title" style="margin-top: 40px;">📂 Other Data</div>', unsafe_allow_html=True)
+            st.markdown('<div class="table-title" style="margin-top: 40px;">📂 Other Data (Same Date / Category)</div>', unsafe_allow_html=True)
             st.dataframe(other_sales, use_container_width=True, hide_index=True, height=300)
             
             # Download button downloads ONLY the matched data if searched
-            csv_to_download = matched_sales if not matched_sales.empty else other_sales
+            csv_to_download = matched_sales if (matched_sales is not None and not matched_sales.empty) else other_sales
         else:
             st.markdown('<div class="table-title">Invoice Ledger</div>', unsafe_allow_html=True)
             st.dataframe(filtered_sales, use_container_width=True, hide_index=True, height=500)
@@ -427,4 +448,3 @@ elif app_mode == "Sales & Invoices Dashboard":
                 mime="text/csv",
                 use_container_width=True
             )
-            
