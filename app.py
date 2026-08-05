@@ -34,26 +34,8 @@ st.markdown("""
         box-shadow: 2px 0px 12px rgba(0, 0, 0, 0.08);
         padding-top: 1rem;
     }
-    [data-testid="stSidebar"] .stMarkdown p, 
-    [data-testid="stSidebar"] .stMarkdown h1, 
-    [data-testid="stSidebar"] .stMarkdown h2, 
-    [data-testid="stSidebar"] .stMarkdown h3 {
-        color: #202124 !important;
-    }
-    [data-testid="stSidebar"] label {
-        color: #5F6368 !important;
-        font-weight: 500 !important;
-        font-size: 14px !important;
-        margin-bottom: 4px;
-    }
-    [data-testid="stSidebar"] div[role="radiogroup"] label p,
-    [data-testid="stSidebar"] div[role="radiogroup"] label div {
-        color: #202124 !important;
-        font-weight: 400 !important;
-        font-size: 14px !important;
-    }
-
-    /* Main Content & Cards */
+    
+    /* Headers & Text */
     .welcome-header {
         color: #202124;
         font-size: 26px;
@@ -67,7 +49,15 @@ st.markdown("""
         font-size: 14px;
         margin-bottom: 24px;
     }
+    .table-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: #202124;
+        margin-top: 24px;
+        margin-bottom: 16px;
+    }
 
+    /* Metric Cards */
     div[data-testid="metric-container"] {
         background-color: #FFFFFF;
         border-radius: 16px;
@@ -85,29 +75,8 @@ st.markdown("""
         font-size: 32px !important;
         font-weight: 500 !important;
     }
-    div[data-testid="stMetricLabel"] {
-        color: #5F6368 !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Table & Alerts */
-    .table-title {
-        font-size: 18px;
-        font-weight: 500;
-        color: #202124;
-        margin-top: 24px;
-        margin-bottom: 16px;
-    }
-    div[data-testid="stDataFrame"] {
-        background-color: #FFFFFF;
-        border-radius: 16px;
-        border: none;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-        padding: 8px;
-    }
+    
+    /* Alerts */
     .alert-box {
         padding: 16px 24px;
         border-radius: 12px;
@@ -130,23 +99,54 @@ st.markdown("""
         color: #5F6368;
         font-size: 14px;
     }
-    
-    /* Custom Download Button */
-    [data-testid="baseButton-secondary"] {
-        border-radius: 20px !important;
-        background-color: #E8F0FE !important;
-        color: #1A73E8 !important;
-        border: none !important;
-        font-weight: 500 !important;
-        transition: background-color 0.2s ease;
-    }
-    [data-testid="baseButton-secondary"]:hover {
-        background-color: #D2E3FC !important;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Sidebar UI (Android Drawer Style) ---
+# --- Helper Functions ---
+FILE_NAME = "data.xlsx"
+
+@st.cache_data(ttl=60) 
+def load_cheque_data():
+    df = pd.read_excel(FILE_NAME)
+    df.columns = df.columns.str.strip()
+    
+    if 'Status' in df.columns:
+        df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
+    else:
+        st.error(f"System Error: 'Status' column missing in {FILE_NAME}.")
+        st.stop()
+
+    if 'CITY' in df.columns:
+        df['CITY'] = df['CITY'].fillna('Unknown')
+        df['Search_Display'] = df['Party Name'].astype(str) + " (" + df['CITY'].astype(str) + ")"
+    else:
+        df['Search_Display'] = df['Party Name'].astype(str)
+
+    # Standardize dates for display but keep original logic intact
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].dt.strftime('%d-%m-%Y')
+    return df
+
+def save_data(new_df):
+    """Saves dataframe back to Excel and clears cache to refresh view."""
+    try:
+        # Drop the temporary Search_Display column before saving
+        save_df = new_df.drop(columns=['Search_Display'], errors='ignore')
+        save_df.to_excel(FILE_NAME, index=False)
+        st.cache_data.clear()
+        st.success("✅ Changes saved successfully!")
+    except Exception as e:
+        st.error(f"Error saving file: {e}")
+
+# --- Data Loading ---
+try:
+    df = load_cheque_data()
+except FileNotFoundError:
+    st.error(f"System Error: '{FILE_NAME}' file not found in the directory.")
+    st.stop()
+
+# --- Sidebar UI ---
 with st.sidebar:
     st.markdown("""
         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #F1F3F4;'>
@@ -160,45 +160,6 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
 
-# ==========================================
-# CHEQUE DASHBOARD LOGIC
-# ==========================================
-
-@st.cache_data(ttl=60) 
-def load_cheque_data():
-    df = pd.read_excel("data.xlsx")
-    df.columns = df.columns.str.strip()
-    
-    if 'Status' in df.columns:
-        df['Status'] = df['Status'].fillna('UNUSED').replace('', 'UNUSED')
-    else:
-        st.error("System Error: 'Status' column missing in data.xlsx.")
-        st.stop()
-
-    if 'CITY' in df.columns:
-        df['CITY'] = df['CITY'].fillna('Unknown')
-        df['Search_Display'] = df['Party Name'].astype(str) + " (" + df['CITY'].astype(str) + ")"
-    else:
-        df['Search_Display'] = df['Party Name'].astype(str)
-
-    for col in df.columns:
-        if pd.api.types.is_datetime64_any_dtype(df[col]):
-            df[col] = df[col].dt.strftime('%d-%m-%Y')
-        elif 'date' in col.lower():
-            try:
-                df[col] = pd.to_datetime(df[col]).dt.strftime('%d-%m-%Y')
-            except:
-                pass 
-    return df
-
-try:
-    df = load_cheque_data()
-except FileNotFoundError:
-    st.error("System Error: 'data.xlsx' file not found in the directory.")
-    st.stop()
-
-with st.sidebar:
-    # Feature: Global Search Bar
     global_search = st.text_input("🔍 Search Database", placeholder="Cheque No, Bank, etc.")
     st.markdown("<hr style='border-color: #F1F3F4; margin: 10px 0;'>", unsafe_allow_html=True)
     
@@ -209,7 +170,9 @@ with st.sidebar:
     status_filter = st.radio("Cheque Status Filter", ["All Cheques", "Available (Unused)", "Cleared (Used)"])
     st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
-# Routing Logic based on Sidebar inputs
+# ==========================================
+# ROUTING LOGIC
+# ==========================================
 if global_search.strip() != "":
     # --- VIEW 1: GLOBAL SEARCH RESULTS ---
     st.markdown(f"""
@@ -217,7 +180,6 @@ if global_search.strip() != "":
         <div class="welcome-subtext">Searching all records for: <b>"{global_search}"</b></div>
     """, unsafe_allow_html=True)
     
-    # Search across all columns as strings
     mask = df.astype(str).apply(lambda x: x.str.contains(global_search, case=False, na=False)).any(axis=1)
     search_results = df[mask].drop(columns=['Search_Display'])
     
@@ -225,23 +187,55 @@ if global_search.strip() != "":
         st.warning("No matches found. Please try a different search term.")
     else:
         st.success(f"Found {len(search_results)} matching record(s).")
-        st.dataframe(search_results, use_container_width=True, hide_index=True, height=500)
+        st.dataframe(search_results, use_container_width=True, hide_index=True)
 
 elif selected_display != "-- Select a Client --":
-    # --- VIEW 2: INDIVIDUAL CLIENT DASHBOARD ---
+    # --- VIEW 2: INDIVIDUAL CLIENT DASHBOARD (WITH PRODUCTIVITY TOOLS) ---
+    party_name = selected_display.split('(')[0].strip()
+    st.markdown(f"""
+        <div class="welcome-header">{party_name}</div>
+        <div class="welcome-subtext">Manage inventory, update status, and log new cheques.</div>
+    """, unsafe_allow_html=True)
+
+    # Productivity Feature 1: Quick Add Form
+    with st.expander("➕ Log New Cheque for this Client"):
+        with st.form("add_cheque_form", clear_on_submit=True):
+            cols = st.columns(3)
+            new_chq_no = cols[0].text_input("Cheque Number*")
+            new_bank = cols[1].text_input("Bank Name")
+            new_amount = cols[2].number_input("Amount (Optional)", min_value=0.0, step=100.0)
+            
+            submitted = st.form_submit_button("Add to Database")
+            if submitted:
+                if new_chq_no:
+                    # Create new row mapping
+                    new_row = {
+                        'Party Name': party_name,
+                        'CITY': selected_display.split('(')[-1].replace(')', '') if '(' in selected_display else 'Unknown',
+                        'Cheque No': new_chq_no,
+                        'Bank': new_bank,
+                        'Amount': new_amount if new_amount > 0 else '',
+                        'Status': 'UNUSED'
+                    }
+                    # Append and save
+                    new_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                    save_data(new_df)
+                    st.rerun()
+                else:
+                    st.error("Cheque Number is required!")
+
+    # Data Calculations
     filtered_df = df[df['Search_Display'] == selected_display]
-    final_table = filtered_df.drop(columns=['Search_Display'])
-    
     used_count = len(filtered_df[filtered_df['Status'].str.upper() == 'USE'])
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
-    party_name = selected_display.split('(')[0].strip()
-    st.markdown(f"""
-        <div class="welcome-header">{party_name}</div>
-        <div class="welcome-subtext">Client overview and cheque inventory details.</div>
-    """, unsafe_allow_html=True)
-    
+    # Productivity Feature 2: Visual Inventory Health
+    if total_count > 0:
+        health_percentage = unused_count / total_count
+        progress_color = "normal" if unused_count > 2 else "red"
+        st.progress(health_percentage, text=f"Inventory Health: {unused_count} of {total_count} available")
+
     if unused_count == 0:
         st.markdown(f"""
             <div class="alert-box error">
@@ -262,35 +256,47 @@ elif selected_display != "-- Select a Client --":
     m2.metric("Used / Cleared", used_count)
     m3.metric("Available", unused_count)
     
-    st.markdown('<div class="table-title">Recent Activity</div>', unsafe_allow_html=True)
+    st.markdown('<div class="table-title">Interactive Cheque Ledger</div>', unsafe_allow_html=True)
+    st.caption("💡 Tip: Double-click the 'Status' column to change a cheque from UNUSED to USE, then click Save.")
     
-    display_df = final_table.copy()
+    display_df = filtered_df.copy()
     if status_filter == "Available (Unused)":
         display_df = display_df[display_df['Status'].str.upper() == 'UNUSED']
     elif status_filter == "Cleared (Used)":
         display_df = display_df[display_df['Status'].str.upper() == 'USE']
 
-    st.dataframe(display_df, use_container_width=True, hide_index=True, height=400)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    d_col1, d_col2 = st.columns([5, 1.2]) 
-    with d_col2:
-        csv_data = display_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download CSV",
-            data=csv_data,
-            file_name=f"{selected_display}_Cheques.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+    # Productivity Feature 3: Inline Editable Dataframe
+    edited_df = st.data_editor(
+        display_df.drop(columns=['Search_Display']),
+        column_config={
+            "Status": st.column_config.SelectboxColumn(
+                "Status",
+                help="Mark cheque as used",
+                options=["UNUSED", "USE"],
+                required=True
+            )
+        },
+        disabled=[col for col in display_df.columns if col not in ['Status', 'Search_Display']],
+        use_container_width=True,
+        hide_index=True,
+        key="editor"
+    )
+
+    # Save button for inline edits
+    if not display_df.drop(columns=['Search_Display']).equals(edited_df):
+        if st.button("💾 Save Status Updates", type="primary"):
+            # Update the original dataframe with edited values using index
+            df.update(edited_df)
+            save_data(df)
+            st.rerun()
+            
 else:
-    # --- VIEW 3: GLOBAL OVERVIEW (NEW FEATURE) ---
+    # --- VIEW 3: GLOBAL OVERVIEW ---
     st.markdown("""
         <div class="welcome-header">Global Inventory Overview</div>
         <div class="welcome-subtext">Select a specific client from the sidebar, or review global metrics below.</div>
     """, unsafe_allow_html=True)
     
-    # Calculate Global Metrics
     global_total = len(df)
     global_used = len(df[df['Status'].str.upper() == 'USE'])
     global_unused = global_total - global_used
@@ -300,15 +306,12 @@ else:
     g2.metric("Total Used Cheques", global_used)
     g3.metric("Total Available Cheques", global_unused)
     
-    # Calculate Low Inventory Clients
     st.markdown('<div class="table-title">🚨 Action Required: Low Cheque Inventory</div>', unsafe_allow_html=True)
     
-    # Group by Party and count UNUSED cheques
     inventory_summary = df.groupby('Search_Display')['Status'].apply(
         lambda x: (x.str.upper() == 'UNUSED').sum()
     ).reset_index(name='Available Cheques')
     
-    # Filter for clients with 2 or fewer cheques, sort ascending
     low_stock_clients = inventory_summary[inventory_summary['Available Cheques'] <= 2].sort_values('Available Cheques')
     low_stock_clients = low_stock_clients.rename(columns={'Search_Display': 'Party Name (City)'})
     
@@ -320,7 +323,6 @@ else:
                 The following clients have critically low cheque inventory (2 or fewer). Please contact them to procure more cheques.
             </div>
         """, unsafe_allow_html=True)
-        # Display as a styled table
         st.dataframe(
             low_stock_clients.style.applymap(
                 lambda x: 'color: #D93025; font-weight: bold;' if x == 0 else 'color: #F9AB00; font-weight: bold;',
