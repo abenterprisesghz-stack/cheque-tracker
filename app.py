@@ -235,10 +235,11 @@ if selected_display != "-- Global Overview --":
             </div>
         """, unsafe_allow_html=True)
     elif unused_count <= 2:
+        # Changed this to 'alert-box error' so it also shows as Red for 1 or 2 cheques
         st.markdown(f"""
-            <div class="alert-box">
-                <span class="alert-title">⚠️ Low Inventory Warning</span>
-                <span class="alert-text">Only <b>{unused_count}</b> unused cheque(s) remaining for this account.</span>
+            <div class="alert-box error">
+                <span class="alert-title">🚨 Low Inventory Warning</span>
+                <span class="alert-text">Only <b>{unused_count}</b> unused cheque(s) remaining for this account. Please procure new cheques immediately.</span>
             </div>
         """, unsafe_allow_html=True)
 
@@ -307,10 +308,9 @@ else:
             </div>
         """, unsafe_allow_html=True)
         
-        # Color code the low stock alerts (0 = Red, 1-2 = Orange)
+        # Now 0, 1, and 2 all get the exact same Red highlight color
         styled_low_stock = low_stock_clients.style.map(
-            lambda x: 'background-color: #FCE8E6; color: #C5221F; font-weight: bold;' if x == 0 else 'background-color: #FFF8E1; color: #F29900; font-weight: bold;',
+            lambda x: 'background-color: #FCE8E6; color: #C5221F; font-weight: bold;' if x <= 2 else '',
             subset=['Available Cheques']
         )
         st.dataframe(styled_low_stock, use_container_width=True, hide_index=True)
-        
