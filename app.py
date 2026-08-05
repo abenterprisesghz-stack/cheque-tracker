@@ -198,13 +198,37 @@ except FileNotFoundError:
     st.stop()
 
 with st.sidebar:
+    # Feature: Global Search Bar
+    global_search = st.text_input("🔍 Search Database", placeholder="Cheque No, Bank, etc.")
+    st.markdown("<hr style='border-color: #F1F3F4; margin: 10px 0;'>", unsafe_allow_html=True)
+    
     display_list = sorted(list(df['Search_Display'].dropna().unique()))
     selected_display = st.selectbox("Select Party Account", ["-- Select a Client --"] + display_list)
+    
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
     status_filter = st.radio("Cheque Status Filter", ["All Cheques", "Available (Unused)", "Cleared (Used)"])
     st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
 
-if selected_display != "-- Select a Client --":
+# Routing Logic based on Sidebar inputs
+if global_search.strip() != "":
+    # --- VIEW 1: GLOBAL SEARCH RESULTS ---
+    st.markdown(f"""
+        <div class="welcome-header">Search Results</div>
+        <div class="welcome-subtext">Searching all records for: <b>"{global_search}"</b></div>
+    """, unsafe_allow_html=True)
+    
+    # Search across all columns as strings
+    mask = df.astype(str).apply(lambda x: x.str.contains(global_search, case=False, na=False)).any(axis=1)
+    search_results = df[mask].drop(columns=['Search_Display'])
+    
+    if search_results.empty:
+        st.warning("No matches found. Please try a different search term.")
+    else:
+        st.success(f"Found {len(search_results)} matching record(s).")
+        st.dataframe(search_results, use_container_width=True, hide_index=True, height=500)
+
+elif selected_display != "-- Select a Client --":
+    # --- VIEW 2: INDIVIDUAL CLIENT DASHBOARD ---
     filtered_df = df[df['Search_Display'] == selected_display]
     final_table = filtered_df.drop(columns=['Search_Display'])
     
@@ -260,12 +284,48 @@ if selected_display != "-- Select a Client --":
             use_container_width=True
         )
 else:
+    # --- VIEW 3: GLOBAL OVERVIEW (NEW FEATURE) ---
     st.markdown("""
-        <div style="margin-top: 60px; padding: 40px; background-color: #FFFFFF; border-radius: 16px; box-shadow: 0px 4px 12px rgba(0,0,0,0.05); text-align: center;">
-            <div style="background-color: #E8F0FE; width: 64px; height: 64px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 20px auto; font-size: 28px;">
-                📝
-            </div>
-            <div class="welcome-header">Cheque Inventory</div>
-            <div class="welcome-subtext">Open the sidebar menu and select a client to view their cheque details.</div>
-        </div>
+        <div class="welcome-header">Global Inventory Overview</div>
+        <div class="welcome-subtext">Select a specific client from the sidebar, or review global metrics below.</div>
     """, unsafe_allow_html=True)
+    
+    # Calculate Global Metrics
+    global_total = len(df)
+    global_used = len(df[df['Status'].str.upper() == 'USE'])
+    global_unused = global_total - global_used
+    
+    g1, g2, g3 = st.columns(3)
+    g1.metric("Total Cheques in System", global_total)
+    g2.metric("Total Used Cheques", global_used)
+    g3.metric("Total Available Cheques", global_unused)
+    
+    # Calculate Low Inventory Clients
+    st.markdown('<div class="table-title">🚨 Action Required: Low Cheque Inventory</div>', unsafe_allow_html=True)
+    
+    # Group by Party and count UNUSED cheques
+    inventory_summary = df.groupby('Search_Display')['Status'].apply(
+        lambda x: (x.str.upper() == 'UNUSED').sum()
+    ).reset_index(name='Available Cheques')
+    
+    # Filter for clients with 2 or fewer cheques, sort ascending
+    low_stock_clients = inventory_summary[inventory_summary['Available Cheques'] <= 2].sort_values('Available Cheques')
+    low_stock_clients = low_stock_clients.rename(columns={'Search_Display': 'Party Name (City)'})
+    
+    if low_stock_clients.empty:
+        st.success("✅ All clients have healthy cheque inventory (3 or more available).")
+    else:
+        st.markdown("""
+            <div style='color: #5F6368; font-size: 14px; margin-bottom: 12px;'>
+                The following clients have critically low cheque inventory (2 or fewer). Please contact them to procure more cheques.
+            </div>
+        """, unsafe_allow_html=True)
+        # Display as a styled table
+        st.dataframe(
+            low_stock_clients.style.applymap(
+                lambda x: 'color: #D93025; font-weight: bold;' if x == 0 else 'color: #F9AB00; font-weight: bold;',
+                subset=['Available Cheques']
+            ),
+            use_container_width=True, 
+            hide_index=True
+        )
