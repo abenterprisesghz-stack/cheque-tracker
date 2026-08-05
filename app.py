@@ -173,32 +173,8 @@ elif selected_display != "-- Select a Client --":
     party_name = selected_display.split('(')[0].strip()
     st.markdown(f"""
         <div class="welcome-header">{party_name}</div>
-        <div class="welcome-subtext">Manage inventory, update status, and log new cheques.</div>
+        <div class="welcome-subtext">Manage inventory and update status.</div>
     """, unsafe_allow_html=True)
-
-    with st.expander("➕ Log New Cheque for this Client"):
-        with st.form("add_cheque_form", clear_on_submit=True):
-            cols = st.columns(3)
-            new_chq_no = cols[0].text_input("Cheque Number*")
-            new_bank = cols[1].text_input("Bank Name")
-            new_amount = cols[2].number_input("Amount (Optional)", min_value=0.0, step=100.0)
-            
-            submitted = st.form_submit_button("Add to Database")
-            if submitted:
-                if new_chq_no:
-                    new_row = {
-                        'Party Name': party_name,
-                        'CITY': selected_display.split('(')[-1].replace(')', '') if '(' in selected_display else 'Unknown',
-                        'Cheque No': new_chq_no,
-                        'Bank': new_bank,
-                        'Amount': new_amount if new_amount > 0 else '',
-                        'Status': 'UNUSED'
-                    }
-                    new_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                    save_data(new_df)
-                    st.rerun()
-                else:
-                    st.error("Cheque Number is required!")
 
     filtered_df = df[df['Search_Display'] == selected_display]
     used_count = len(filtered_df[filtered_df['Status'].str.upper() == 'USE'])
@@ -283,3 +259,4 @@ else:
             use_container_width=True, 
             hide_index=True
         )
+        
