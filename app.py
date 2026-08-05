@@ -170,8 +170,11 @@ def load_cheque_data():
     df.columns = df.columns.str.strip()
     
     if 'Status' in df.columns:
-        # BUG FIX: Convert to string, remove extra spaces, and make uppercase to ensure accurate matching
+        # Pehle jo real blank/empty/NaN values hain unko 'UNUSED' kar do
+        df['Status'] = df['Status'].fillna('UNUSED')
+        # Fir text ko clean karo (spaces hatao aur uppercase karo)
         df['Status'] = df['Status'].astype(str).str.strip().str.upper()
+        # Agar text form me 'NAN', 'NONE', ya sirf empty space ('') bach gaya hai toh usko bhi 'UNUSED' kar do
         df['Status'] = df['Status'].replace(['NAN', 'NONE', 'NULL', ''], 'UNUSED')
     else:
         st.error("System Error: 'Status' column missing in data.xlsx.")
@@ -210,7 +213,6 @@ if selected_display != "-- Select a Client --":
     filtered_df = df[df['Search_Display'] == selected_display]
     final_table = filtered_df.drop(columns=['Search_Display'])
     
-    # Using strict matching since we already cleaned the data in load_cheque_data()
     used_count = len(filtered_df[filtered_df['Status'] == 'USE'])
     total_count = len(filtered_df)
     unused_count = total_count - used_count
