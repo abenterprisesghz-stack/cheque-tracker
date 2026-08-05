@@ -196,9 +196,9 @@ except FileNotFoundError:
 # --- Table Coloring Function ---
 def color_status(val):
     if val == 'UNUSED':
-        return 'background-color: #E6F4EA; color: #137333; font-weight: 600;'
+        return 'background-color: #E6F4EA; color: #137333; font-weight: 600;' # Green
     elif val == 'USE':
-        return 'background-color: #F8F9FA; color: #5F6368; font-weight: 500;'
+        return 'background-color: #FCE8E6; color: #D93025; font-weight: 600;' # Red Highlight
     return ''
 
 # --- UI Controls ---
@@ -313,3 +313,4 @@ else:
             subset=['Available Cheques']
         )
         st.dataframe(styled_low_stock, use_container_width=True, hide_index=True)
+        
