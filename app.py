@@ -252,11 +252,10 @@ else:
         st.success("✅ All clients have healthy cheque inventory (3 or more available).")
     else:
         st.dataframe(
-            low_stock_clients.style.applymap(
+            low_stock_clients.style.map(  # Fixed: changed applymap to map
                 lambda x: 'color: #D93025; font-weight: bold;' if x == 0 else 'color: #F9AB00; font-weight: bold;',
                 subset=['Available Cheques']
             ),
             use_container_width=True, 
             hide_index=True
         )
-        
