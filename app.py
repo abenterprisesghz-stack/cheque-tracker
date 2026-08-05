@@ -56,25 +56,6 @@ st.markdown("""
         margin-top: 24px;
         margin-bottom: 16px;
     }
-
-    /* Metric Cards */
-    div[data-testid="metric-container"] {
-        background-color: #FFFFFF;
-        border-radius: 16px;
-        padding: 20px 24px;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0,0,0,0.03);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    div[data-testid="metric-container"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
-    }
-    div[data-testid="stMetricValue"] {
-        color: #1A73E8 !important;
-        font-size: 32px !important;
-        font-weight: 500 !important;
-    }
     
     /* Alerts */
     .alert-box {
@@ -122,7 +103,6 @@ def load_cheque_data():
     else:
         df['Search_Display'] = df['Party Name'].astype(str)
 
-    # Standardize dates for display but keep original logic intact
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             df[col] = df[col].dt.strftime('%d-%m-%Y')
@@ -131,7 +111,6 @@ def load_cheque_data():
 def save_data(new_df):
     """Saves dataframe back to Excel and clears cache to refresh view."""
     try:
-        # Drop the temporary Search_Display column before saving
         save_df = new_df.drop(columns=['Search_Display'], errors='ignore')
         save_df.to_excel(FILE_NAME, index=False)
         st.cache_data.clear()
@@ -190,14 +169,13 @@ if global_search.strip() != "":
         st.dataframe(search_results, use_container_width=True, hide_index=True)
 
 elif selected_display != "-- Select a Client --":
-    # --- VIEW 2: INDIVIDUAL CLIENT DASHBOARD (WITH PRODUCTIVITY TOOLS) ---
+    # --- VIEW 2: INDIVIDUAL CLIENT DASHBOARD ---
     party_name = selected_display.split('(')[0].strip()
     st.markdown(f"""
         <div class="welcome-header">{party_name}</div>
         <div class="welcome-subtext">Manage inventory, update status, and log new cheques.</div>
     """, unsafe_allow_html=True)
 
-    # Productivity Feature 1: Quick Add Form
     with st.expander("➕ Log New Cheque for this Client"):
         with st.form("add_cheque_form", clear_on_submit=True):
             cols = st.columns(3)
@@ -208,7 +186,6 @@ elif selected_display != "-- Select a Client --":
             submitted = st.form_submit_button("Add to Database")
             if submitted:
                 if new_chq_no:
-                    # Create new row mapping
                     new_row = {
                         'Party Name': party_name,
                         'CITY': selected_display.split('(')[-1].replace(')', '') if '(' in selected_display else 'Unknown',
@@ -217,23 +194,20 @@ elif selected_display != "-- Select a Client --":
                         'Amount': new_amount if new_amount > 0 else '',
                         'Status': 'UNUSED'
                     }
-                    # Append and save
                     new_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                     save_data(new_df)
                     st.rerun()
                 else:
                     st.error("Cheque Number is required!")
 
-    # Data Calculations
     filtered_df = df[df['Search_Display'] == selected_display]
     used_count = len(filtered_df[filtered_df['Status'].str.upper() == 'USE'])
     total_count = len(filtered_df)
     unused_count = total_count - used_count
     
-    # Productivity Feature 2: Visual Inventory Health
+    # --- Visual Inventory Health ONLY ---
     if total_count > 0:
         health_percentage = unused_count / total_count
-        progress_color = "normal" if unused_count > 2 else "red"
         st.progress(health_percentage, text=f"Inventory Health: {unused_count} of {total_count} available")
 
     if unused_count == 0:
@@ -250,11 +224,6 @@ elif selected_display != "-- Select a Client --":
                 <span class="alert-text">Only <b>{unused_count}</b> unused cheque(s) remaining for this account.</span>
             </div>
         """, unsafe_allow_html=True)
-
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Total Logged", total_count)
-    m2.metric("Used / Cleared", used_count)
-    m3.metric("Available", unused_count)
     
     st.markdown('<div class="table-title">Interactive Cheque Ledger</div>', unsafe_allow_html=True)
     st.caption("💡 Tip: Double-click the 'Status' column to change a cheque from UNUSED to USE, then click Save.")
@@ -265,7 +234,6 @@ elif selected_display != "-- Select a Client --":
     elif status_filter == "Cleared (Used)":
         display_df = display_df[display_df['Status'].str.upper() == 'USE']
 
-    # Productivity Feature 3: Inline Editable Dataframe
     edited_df = st.data_editor(
         display_df.drop(columns=['Search_Display']),
         column_config={
@@ -282,29 +250,18 @@ elif selected_display != "-- Select a Client --":
         key="editor"
     )
 
-    # Save button for inline edits
     if not display_df.drop(columns=['Search_Display']).equals(edited_df):
         if st.button("💾 Save Status Updates", type="primary"):
-            # Update the original dataframe with edited values using index
             df.update(edited_df)
             save_data(df)
             st.rerun()
             
 else:
-    # --- VIEW 3: GLOBAL OVERVIEW ---
+    # --- VIEW 3: GLOBAL HEALTH OVERVIEW ---
     st.markdown("""
-        <div class="welcome-header">Global Inventory Overview</div>
-        <div class="welcome-subtext">Select a specific client from the sidebar, or review global metrics below.</div>
+        <div class="welcome-header">Global Inventory Health</div>
+        <div class="welcome-subtext">Review clients with critically low cheque inventory below.</div>
     """, unsafe_allow_html=True)
-    
-    global_total = len(df)
-    global_used = len(df[df['Status'].str.upper() == 'USE'])
-    global_unused = global_total - global_used
-    
-    g1, g2, g3 = st.columns(3)
-    g1.metric("Total Cheques in System", global_total)
-    g2.metric("Total Used Cheques", global_used)
-    g3.metric("Total Available Cheques", global_unused)
     
     st.markdown('<div class="table-title">🚨 Action Required: Low Cheque Inventory</div>', unsafe_allow_html=True)
     
@@ -318,11 +275,6 @@ else:
     if low_stock_clients.empty:
         st.success("✅ All clients have healthy cheque inventory (3 or more available).")
     else:
-        st.markdown("""
-            <div style='color: #5F6368; font-size: 14px; margin-bottom: 12px;'>
-                The following clients have critically low cheque inventory (2 or fewer). Please contact them to procure more cheques.
-            </div>
-        """, unsafe_allow_html=True)
         st.dataframe(
             low_stock_clients.style.applymap(
                 lambda x: 'color: #D93025; font-weight: bold;' if x == 0 else 'color: #F9AB00; font-weight: bold;',
