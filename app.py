@@ -204,7 +204,7 @@ def color_status(val):
 # --- UI Controls ---
 with st.sidebar:
     display_list = sorted(list(df['Search_Display'].dropna().unique()))
-    selected_display = st.selectbox("Select Party Account", ["-- Global Overview --"] + display_list)
+    selected_display = st.selectbox("Select Party Account", ["-- Search By Name's --"] + display_list)
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
     status_filter = st.radio("Cheque Status Filter", ["All Cheques", "Available (Unused)", "Cleared (Used)"])
     st.caption(f"🕒 Last Synced: {datetime.now().strftime('%I:%M %p, %d %b')}")
