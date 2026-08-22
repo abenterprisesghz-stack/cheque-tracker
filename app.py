@@ -212,7 +212,7 @@ with st.sidebar:
 # ==========================================
 # MAIN ROUTING
 # ==========================================
-if selected_display != "-- Global Overview --":
+if selected_display != "-- Search BY Name's --":
     # --- INDIVIDUAL CLIENT VIEW ---
     filtered_df = df[df['Search_Display'] == selected_display]
     final_table = filtered_df.drop(columns=['Search_Display'])
