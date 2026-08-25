@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import plotly.express as px
-import plotly.graph_objects as go
 
 # --- Page Setup ---
 st.set_page_config(
@@ -123,6 +121,13 @@ st.markdown("""
     .alert-text {
         color: #3C4043;
         font-size: 14px;
+    }
+    .progress-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        padding: 18px 20px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0px 2px 8px rgba(0,0,0,0.04);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -266,6 +271,7 @@ else:
     global_used = len(df[df['Status'] == 'USE'])
     global_unused = global_total - global_used
     utilization_pct = round((global_used / global_total * 100), 1) if global_total > 0 else 0
+    available_pct = 100.0 - utilization_pct if global_total > 0 else 0
     
     g1, g2, g3, g4 = st.columns(4)
     g1.metric("Total Cheques", f"{global_total:,}")
@@ -275,49 +281,33 @@ else:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Visual Analytics Row
-    col_chart1, col_chart2 = st.columns([1, 1.2])
+    # --- Live Visual Analytics (Native Streamlit) ---
+    col_v1, col_v2 = st.columns([1, 1.2])
 
-    with col_chart1:
-        st.markdown('<div class="table-title">Stock Ratio</div>', unsafe_allow_html=True)
-        fig_donut = go.Figure(data=[go.Pie(
-            labels=['Available', 'Used'],
-            values=[global_unused, global_used],
-            hole=.65,
-            marker_colors=['#34A853', '#EA4335'],
-            textinfo='percent+label'
-        )])
-        fig_donut.update_layout(
-            margin=dict(t=10, b=10, l=10, r=10),
-            showlegend=False,
-            height=280,
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
-        )
-        st.plotly_chart(fig_donut, use_container_width=True)
+    with col_v1:
+        st.markdown('<div class="table-title">Stock Ratio & Health</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="progress-card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:500; font-size:14px;">
+                    <span style="color:#137333;">🟢 Available Stock ({available_pct:.1f}%)</span>
+                    <span style="color:#D93025;">🔴 Cleared ({utilization_pct:.1f}%)</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        st.progress(available_pct / 100 if global_total > 0 else 0)
 
-    with col_chart2:
-        st.markdown('<div class="table-title">City-wise Distribution</div>', unsafe_allow_html=True)
+        summary_df = pd.DataFrame({
+            "Status": ["Available (Unused)", "Used / Cleared"],
+            "Count": [global_unused, global_used]
+        }).set_index("Status")
+        st.bar_chart(summary_df, height=220, color="#1A73E8")
+
+    with col_v2:
+        st.markdown('<div class="table-title">Top Cities by Inventory</div>', unsafe_allow_html=True)
         if 'CITY' in df.columns:
-            city_df = df.groupby(['CITY', 'Status']).size().reset_index(name='Count')
-            fig_bar = px.bar(
-                city_df, 
-                x='CITY', 
-                y='Count', 
-                color='Status',
-                barmode='group',
-                color_discrete_map={'UNUSED': '#34A853', 'USE': '#EA4335'}
-            )
-            fig_bar.update_layout(
-                margin=dict(t=10, b=10, l=10, r=10),
-                height=280,
-                xaxis_title="",
-                yaxis_title="Cheques",
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
+            city_chart_df = df.groupby('CITY')['Status'].count().reset_index(name='Total Cheques')
+            city_chart_df = city_chart_df.sort_values(by='Total Cheques', ascending=False).head(8)
+            st.bar_chart(city_chart_df.set_index('CITY'), height=280, color="#34A853")
 
     st.markdown('<div class="table-title">🚨 Clients Requiring Attention (Low Stock)</div>', unsafe_allow_html=True)
     
